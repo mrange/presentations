@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Concurrency", "Concurrency\Concurrency.csproj", "{92985113-649F-42FF-95FE-B4C4F7501EB2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConcurrencyAmp", "ConcurrencyAmp\ConcurrencyAmp.vcxproj", "{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MandelBrot", "MandelBrot\MandelBrot.csproj", "{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Debug|x64.ActiveCfg = Debug|x64
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Debug|x64.Build.0 = Debug|x64
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Debug|x86.ActiveCfg = Debug|x86
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Debug|x86.Build.0 = Debug|x86
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Release|x64.ActiveCfg = Release|x64
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Release|x64.Build.0 = Release|x64
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Release|x86.ActiveCfg = Release|x86
+		{92985113-649F-42FF-95FE-B4C4F7501EB2}.Release|x86.Build.0 = Release|x86
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Debug|x64.ActiveCfg = Debug|x64
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Debug|x64.Build.0 = Debug|x64
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Debug|x86.ActiveCfg = Debug|Win32
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Debug|x86.Build.0 = Debug|Win32
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Release|x64.ActiveCfg = Release|x64
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Release|x64.Build.0 = Release|x64
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Release|x86.ActiveCfg = Release|Win32
+		{5D74D4E1-1495-4A4E-90D5-BC0A0FEEACBD}.Release|x86.Build.0 = Release|Win32
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Debug|x64.ActiveCfg = Debug|x64
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Debug|x64.Build.0 = Debug|x64
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Debug|x86.ActiveCfg = Debug|x86
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Debug|x86.Build.0 = Debug|x86
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Release|x64.ActiveCfg = Release|x64
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Release|x64.Build.0 = Release|x64
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Release|x86.ActiveCfg = Release|x86
+		{5D2B7AA8-ECC6-4122-99B2-945BAE9993CB}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
