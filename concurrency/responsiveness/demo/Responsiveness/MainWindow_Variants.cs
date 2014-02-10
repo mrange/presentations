@@ -24,10 +24,11 @@ namespace Responsiveness
         {
             TraceThreadId();
 
-//            RenderBitmap_Trivial(ct);
+            RenderBitmap_Trivial(ct);
 
-//            RenderBitmap_NaiveTask(ct)
-//            RenderBitmap_Task(ct)
+/*
+            RenderBitmap_NaiveTask(ct)
+            RenderBitmap_Task(ct)
             RenderBitmap_Async(ct)
                 //.ContinueWith(t => 
                 //    {
@@ -40,6 +41,7 @@ namespace Responsiveness
                 //    })
                 .HandleFaults()
                 ;
+*/
         }
 
         void RenderBitmap_Trivial(CancellationToken ct)

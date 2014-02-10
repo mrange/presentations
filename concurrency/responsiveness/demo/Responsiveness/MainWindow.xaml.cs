@@ -21,6 +21,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
+using Responsiveness.Source.Extensions;
+using Responsiveness.Source.Concurrency;
+
 namespace Responsiveness
 {
     struct Vector4
@@ -107,27 +110,6 @@ namespace Responsiveness
                 });
         }
 
-        public static string FormatWith(this string f, params object[] args)
-        {
-            return string.Format(CultureInfo.InvariantCulture, f, args);
-        }
-
-        public static void Dispose_NoThrow (this object o)
-        {
-            var d = o as IDisposable;
-            if (d != null)
-            {
-                try
-                { 
-                    d.Dispose ();
-                }
-                catch (Exception e)
-                {
-                    Trace.WriteLine("Dispose_NoThrow caught: {0}".FormatWith(e.Message));
-                }
-            }
-        }
-
         public static void SetPixel (this byte[] pixels, int pos, Color c)
         {
             var i = pos * 4;
@@ -201,6 +183,9 @@ namespace Responsiveness
             null
             );
 
+        readonly TaskFactory sequentialTaskFactory = new TaskFactory(
+            new SequentialTaskScheduler ("SequentialTaskScheduler"));
+
         CancellationTokenSource m_cancelSource; 
 
         public MainWindow()
@@ -247,7 +232,7 @@ namespace Responsiveness
             if (m_cancelSource != null)
             {
                 m_cancelSource.Cancel();
-                m_cancelSource.Dispose_NoThrow();
+                m_cancelSource.DisposeNoThrow();
             }
 
             m_cancelSource = new CancellationTokenSource();
