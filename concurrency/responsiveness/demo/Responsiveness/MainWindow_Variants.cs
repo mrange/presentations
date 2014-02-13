@@ -12,6 +12,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,28 +21,23 @@ namespace Responsiveness
 {
     partial class MainWindow
     {
-        void RenderBitmap(CancellationToken ct)
+        void RenderBitmap1 (CancellationToken ct)
         {
             TraceThreadId();
 
-            RenderBitmap_Trivial(ct);
+            //RenderBitmap_Trivial(ct);
+            //RenderBitmap_NaiveTask(ct)
+            //RenderBitmap_Task(ct)
+            //.HandleFaults();
+        }
 
-/*
-            RenderBitmap_NaiveTask(ct)
-            RenderBitmap_Task(ct)
-            RenderBitmap_Async(ct)
-                //.ContinueWith(t => 
-                //    {
-                //        TraceThreadId();
+        void RenderBitmap4 (CancellationToken ct)
+        {
+            TraceThreadId();
 
-                //        if (t.IsCanceled || !t.Result)
-                //        {
-                //            DisplayError (new Exception ("Cancelled"));
-                //        }
-                //    })
-                .HandleFaults()
+            Render4Bitmap_Task (ct)
+                .HandleResult()
                 ;
-*/
         }
 
         void RenderBitmap_Trivial(CancellationToken ct)
@@ -61,28 +57,51 @@ namespace Responsiveness
 
             return Task.Run(() => RenderMandelbrot(
                 ct,
+                0,
+                0,
                 width,
                 height,
-                (pixels, x) => Dispatcher.InvokeAsync(() => WritePixels(pixels, x))
+                AsyncWritePixels
                 ), 
                 ct);
         }
 
-        async Task<bool> RenderBitmap_Async(CancellationToken ct)
+        async Task<bool> Render4Bitmap_Task (CancellationToken ct)
         {
-            TraceThreadId();
+            var width = m_bitmap.PixelWidth;
+            var height = m_bitmap.PixelHeight;
 
-            var result = await RenderMandelbrotAsync(ct);
+            Func<int, Task<bool>> taskCreator = 
+                i => Task.Factory.StartNew(
+                    () => RenderMandelbrot(
+                        ct,
+                        (i % 2) * width / 2,
+                        (i / 2) * height / 2,
+                        width/2,
+                        height/2,
+                        AsyncWritePixels
+                        ),
+                    ct,
+                    TaskCreationOptions.LongRunning,
+                    defaultTaskScheduler
+                    );
 
-            TraceThreadId();
+            var task0 = taskCreator (0);
+            var task1 = taskCreator (1);
+            var task2 = taskCreator (2);
+            var task3 = taskCreator (3);
 
-            if (!result)
-            {
-                DisplayError (new Exception ("Cancelled"));
-            }
+            var result0 = await task0;
+            var result1 = await task1;
+            var result2 = await task2;
+            var result3 = await task3;
 
-            return result;
+            return 
+                    result0 
+                &&  result1 
+                &&  result2 
+                &&  result3
+                ;
         }
-    
     }
 }

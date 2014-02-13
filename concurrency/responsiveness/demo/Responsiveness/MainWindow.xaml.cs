@@ -88,14 +88,19 @@ namespace Responsiveness
 
     static class Extensions
     {
-        public static Task HandleFaults<T> (this Task<T> task)
+        public static Task HandleResult (this Task<bool> task)
         {
             return task.ContinueWith(t => 
                 {
-                   if (t.IsFaulted)
-                   {
+                    if (t.IsCanceled || !t.Result)
+                    {
+                       App.HandleFaults(new Exception ("Cancelled"));
+                    }
+
+                    if (t.IsFaulted)
+                    {
                        App.HandleFaults(t.Exception);
-                   }
+                    }
                 });
         }
 
@@ -183,8 +188,8 @@ namespace Responsiveness
             null
             );
 
-        readonly TaskFactory sequentialTaskFactory = new TaskFactory(
-            new SequentialTaskScheduler ("SequentialTaskScheduler"));
+        readonly TaskScheduler sequentialTaskScheduler = new SequentialTaskScheduler ("SequentialTaskScheduler");
+        readonly TaskScheduler defaultTaskScheduler = TaskScheduler.Default;
 
         CancellationTokenSource m_cancelSource; 
 
@@ -219,24 +224,21 @@ namespace Responsiveness
             m_colorPalette[MaxIter] = Colors.Black;
         }
 
-        void Click_Cancel (object sender, EventArgs args)
-        {
-            if (m_cancelSource != null)
-            {
-                m_cancelSource.Cancel();
-            }
-        }
-
-        void Click_Render (object sender, EventArgs args)
+        void Cancel ()
         {
             if (m_cancelSource != null)
             {
                 m_cancelSource.Cancel();
                 m_cancelSource.DisposeNoThrow();
+                m_cancelSource = null;
             }
+        }
+        
+        void CancelAndClear ()
+        {
+            Cancel ();
 
             m_cancelSource = new CancellationTokenSource();
-            var token = m_cancelSource.Token;
 
             var pixels = new byte[m_bitmap.PixelHeight*4];
 
@@ -249,9 +251,27 @@ namespace Responsiveness
                     0
                     );
             }
+        }
 
+        void Click_Cancel (object sender, EventArgs args)
+        {
+            Cancel ();
+        }
 
-            Dispatcher.InvokeAsync(() => RenderBitmap (token));
+        void Click_Render1 (object sender, EventArgs args)
+        {
+            CancelAndClear ();
+
+            Dispatcher.InvokeAsync(() => RenderBitmap1 (m_cancelSource.Token));
+        }
+
+        void Click_Render4 (object sender, EventArgs args)
+        {
+            CancelAndClear ();
+
+            ErrorPanel.Visibility = Visibility.Collapsed;
+
+            Dispatcher.InvokeAsync(() => RenderBitmap4 (m_cancelSource.Token));
         }
 
         internal void DisplayErrorAsync(Exception exc)
@@ -270,10 +290,15 @@ namespace Responsiveness
             Trace.WriteLine("ThreadId: {0}".FormatWith(Thread.CurrentThread.ManagedThreadId));
         }
 
-        void WritePixels(byte[] pixels, int x)
+        void AsyncWritePixels(byte[] pixels, int x, int y)
+        {
+            Dispatcher.InvokeAsync(() => WritePixels(pixels, x, y));
+        }
+
+        void WritePixels(byte[] pixels, int x, int y)
         {
             m_bitmap.WritePixels(
-                new Int32Rect(x, 0, 1, pixels.Length / 4),
+                new Int32Rect(x, y, 1, pixels.Length / 4),
                 pixels,
                 4,
                 0
@@ -302,9 +327,11 @@ namespace Responsiveness
 
         bool RenderMandelbrot(
             CancellationToken ct,
+            int x,
+            int y,
             int width,
             int height,
-            Action<byte[], int> columnWriter
+            Action<byte[], int, int> columnWriter
             )
         {
             var tx = ZoomX/ImageWidth;
@@ -318,9 +345,9 @@ namespace Responsiveness
 
                 for (var iy = 0; iy < height; ++iy)
                 {
-                    var x = tx * ix + mx;
-                    var y = ty * iy + my;
-                    var iter = MandelBrot (x,y, MaxIter);
+                    var xx = tx * ix + mx;
+                    var yy = ty * iy + my;
+                    var iter = MandelBrot (xx,yy, MaxIter);
                     var color = m_colorPalette[iter];
 
                     pixels.SetPixel(iy, color);
@@ -332,7 +359,7 @@ namespace Responsiveness
                 }
                 else
                 {
-                    columnWriter (pixels, ix);
+                    columnWriter (pixels, x + ix, y);
                 }
 
             }
@@ -346,9 +373,11 @@ namespace Responsiveness
             {
                 return RenderMandelbrot(
                     ct,
+                    0,
+                    0,
                     m_bitmap.PixelWidth,
                     m_bitmap.PixelHeight,
-                    (pixels, x) => WritePixels(pixels, x));
+                    (pixels, x, y) => WritePixels(pixels, x, y));
             }
             catch (Exception exc)
             {
@@ -364,9 +393,11 @@ namespace Responsiveness
 
             return Task.Run(() => RenderMandelbrot(
                 ct,
+                0,
+                0,
                 width,
                 height,
-                (pixels, x) => Dispatcher.InvokeAsync(() => WritePixels(pixels, x))
+                AsyncWritePixels
                 ), 
                 ct);
         }

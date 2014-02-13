@@ -17,10 +17,17 @@
             >
             <Button
                 Margin="4"
-                Content="_Render"
+                Content="Render _1"
                 Padding="20,4,20,4"
                 FontSize="24"
-                Click="Click_Render"
+                Click="Click_Render1"
+                />
+            <Button
+                Margin="4"
+                Content="Render _4"
+                Padding="20,4,20,4"
+                FontSize="24"
+                Click="Click_Render4"
                 />
             <Button
                 Margin="4"
