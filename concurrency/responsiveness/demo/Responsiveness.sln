@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Responsiveness", "Responsiveness\Responsiveness.csproj", "{D505C812-E632-4D63-9015-F7DD7D808976}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncAwaitConsole", "AsyncAwaitConsole\AsyncAwaitConsole.csproj", "{1748FB1C-BB72-40B1-B476-1DCA7AF0CF5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncAwaitSample", "AsyncAwaitSample\AsyncAwaitSample.csproj", "{48958D41-F78D-4FE4-BCD7-249BD5988ADE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{D505C812-E632-4D63-9015-F7DD7D808976}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D505C812-E632-4D63-9015-F7DD7D808976}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D505C812-E632-4D63-9015-F7DD7D808976}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1748FB1C-BB72-40B1-B476-1DCA7AF0CF5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1748FB1C-BB72-40B1-B476-1DCA7AF0CF5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1748FB1C-BB72-40B1-B476-1DCA7AF0CF5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1748FB1C-BB72-40B1-B476-1DCA7AF0CF5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48958D41-F78D-4FE4-BCD7-249BD5988ADE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48958D41-F78D-4FE4-BCD7-249BD5988ADE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48958D41-F78D-4FE4-BCD7-249BD5988ADE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48958D41-F78D-4FE4-BCD7-249BD5988ADE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
