@@ -1,10 +1,10 @@
 ﻿// ----------------------------------------------------------------------------------------------
 // Copyright (c) Mårten Rånge.
 // ----------------------------------------------------------------------------------------------
-// This source code is subject to terms and conditions of the Microsoft Public License. A 
-// copy of the license can be found in the License.html file at the root of this distribution. 
-// If you cannot locate the  Microsoft Public License, please send an email to 
-// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+// This source code is subject to terms and conditions of the Microsoft Public License. A
+// copy of the license can be found in the License.html file at the root of this distribution.
+// If you cannot locate the  Microsoft Public License, please send an email to
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound
 //  by the terms of the Microsoft Public License.
 // ----------------------------------------------------------------------------------------------
 // You must not remove this notice, or any other, from this software.
@@ -62,7 +62,7 @@ namespace Responsiveness
                 width,
                 height,
                 AsyncWritePixels
-                ), 
+                ),
                 ct);
         }
 
@@ -71,7 +71,7 @@ namespace Responsiveness
             var width = m_bitmap.PixelWidth;
             var height = m_bitmap.PixelHeight;
 
-            Func<int, Task<bool>> taskCreator = 
+            Func<int, Task<bool>> taskCreator =
                 i => Task.Factory.StartNew(
                     () => RenderMandelbrot(
                         ct,
@@ -96,10 +96,10 @@ namespace Responsiveness
             var result2 = await task2;
             var result3 = await task3;
 
-            return 
-                    result0 
-                &&  result1 
-                &&  result2 
+            return
+                    result0
+                &&  result1
+                &&  result2
                 &&  result3
                 ;
         }

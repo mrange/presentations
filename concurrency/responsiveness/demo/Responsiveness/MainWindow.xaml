@@ -1,8 +1,8 @@
 ﻿<Window x:Class="Responsiveness.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" 
-        MinHeight="350" 
+        Title="MainWindow"
+        MinHeight="350"
         MinWidth="525"
         >
     <Grid>
@@ -11,7 +11,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel 
+        <StackPanel
             Grid.Row="0"
             Orientation="Horizontal"
             >
@@ -37,21 +37,21 @@
                 Click="Click_Cancel"
                 />
         </StackPanel>
-        
+
         <Image
             Grid.Row="1"
             x:Name="Img"
             >
-            
+
         </Image>
 
-        <Grid 
+        <Grid
             Grid.RowSpan="2"
             x:Name="ErrorPanel"
             Visibility="Collapsed"
             Background="#C0000000"
             >
-            <TextBlock 
+            <TextBlock
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"
                 x:Name="ErrorMessage"
@@ -61,6 +61,6 @@
                 TextWrapping="Wrap"
                 />
         </Grid>
-        
+
     </Grid>
 </Window>

@@ -1,10 +1,10 @@
 ﻿// ----------------------------------------------------------------------------------------------
 // Copyright (c) Mårten Rånge.
 // ----------------------------------------------------------------------------------------------
-// This source code is subject to terms and conditions of the Microsoft Public License. A 
-// copy of the license can be found in the License.html file at the root of this distribution. 
-// If you cannot locate the  Microsoft Public License, please send an email to 
-// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+// This source code is subject to terms and conditions of the Microsoft Public License. A
+// copy of the license can be found in the License.html file at the root of this distribution.
+// If you cannot locate the  Microsoft Public License, please send an email to
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound
 //  by the terms of the Microsoft Public License.
 // ----------------------------------------------------------------------------------------------
 // You must not remove this notice, or any other, from this software.
@@ -90,7 +90,7 @@ namespace Responsiveness
     {
         public static Task HandleResult (this Task<bool> task)
         {
-            return task.ContinueWith(t => 
+            return task.ContinueWith(t =>
                 {
                     if (t.IsCanceled || !t.Result)
                     {
@@ -106,7 +106,7 @@ namespace Responsiveness
 
         public static Task HandleFaults (this Task task)
         {
-            return task.ContinueWith(t => 
+            return task.ContinueWith(t =>
                 {
                    if (t.IsFaulted)
                    {
@@ -180,18 +180,18 @@ namespace Responsiveness
         readonly Color[]                m_colorPalette          ;
 
         readonly WriteableBitmap m_bitmap = new WriteableBitmap (
-            ImageWidth, 
-            ImageHeight, 
-            0, 
-            0, 
-            PixelFormats.Bgr32, 
+            ImageWidth,
+            ImageHeight,
+            0,
+            0,
+            PixelFormats.Bgr32,
             null
             );
 
         readonly TaskScheduler sequentialTaskScheduler = new SequentialTaskScheduler ("SequentialTaskScheduler");
         readonly TaskScheduler defaultTaskScheduler = TaskScheduler.Default;
 
-        CancellationTokenSource m_cancelSource; 
+        CancellationTokenSource m_cancelSource;
 
         public MainWindow()
         {
@@ -203,7 +203,7 @@ namespace Responsiveness
 
             var interpolatedColors = Enumerable
                 .Range (0, s_colors.Length)
-                .SelectMany (i => 
+                .SelectMany (i =>
                 {
                     var from    = s_colors[i % s_colors.Length].ToVector4();
                     var to      = s_colors[(i + 1) % s_colors.Length].ToVector4();
@@ -233,7 +233,7 @@ namespace Responsiveness
                 m_cancelSource = null;
             }
         }
-        
+
         void CancelAndClear ()
         {
             Cancel ();
@@ -276,7 +276,7 @@ namespace Responsiveness
 
         internal void DisplayErrorAsync(Exception exc)
         {
-            Dispatcher.InvokeAsync(() => DisplayError (exc));        
+            Dispatcher.InvokeAsync(() => DisplayError (exc));
         }
 
         internal void DisplayError(Exception exc)
@@ -385,7 +385,7 @@ namespace Responsiveness
                 return false;
             }
         }
-        
+
         Task<bool> RenderMandelbrotAsync(CancellationToken ct)
         {
             var width = m_bitmap.PixelWidth;
@@ -398,7 +398,7 @@ namespace Responsiveness
                 width,
                 height,
                 AsyncWritePixels
-                ), 
+                ),
                 ct);
         }
 

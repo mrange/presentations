@@ -35,7 +35,7 @@ namespace AsyncAwaitSample
             //TestCase3.Run ();
         }
 
-        static class TestCase1 
+        static class TestCase1
         {
             public static void Run ()
             {
@@ -49,11 +49,11 @@ namespace AsyncAwaitSample
             }
 
             static async Task<string> ReadSomeTextAsync (string fileName)
-            {    
-                using (var sr = new StreamReader (fileName))    
-                {        
-                    var result = await sr.ReadToEndAsync();        
-                    return result;    
+            {
+                using (var sr = new StreamReader (fileName))
+                {
+                    var result = await sr.ReadToEndAsync();
+                    return result;
                 }
             }
         }
@@ -66,7 +66,7 @@ namespace AsyncAwaitSample
             {
                 Console.WriteLine ("Running TestCase2...");
 
-                var tasks = 
+                var tasks =
                     Enumerable
                         .Range (0, 1000)
                         .Select (i => ReadSomeTextAsync ("SomeText.txt"))
@@ -85,11 +85,11 @@ namespace AsyncAwaitSample
             }
 
             static async Task<string> ReadSomeTextAsync (string fileName)
-            {    
+            {
                 ++m_readingFiles;
                 var result = await ReadFileAsync (fileName);
                 --m_readingFiles;
-                return result;    
+                return result;
             }
 
             static async Task<string> ReadFileAsync (string fileName)
@@ -113,13 +113,13 @@ namespace AsyncAwaitSample
             }
 
             static async Task<string> ReadSomeTextAsync (string fileName)
-            {    
+            {
                 TraceThreadId ();
-                using (var sr = new StreamReader (fileName))    
-                {        
-                    var result = await sr.ReadToEndAsync();        
+                using (var sr = new StreamReader (fileName))
+                {
+                    var result = await sr.ReadToEndAsync();
                     TraceThreadId ();
-                    return result;    
+                    return result;
                 }
             }
 
@@ -134,9 +134,9 @@ namespace AsyncAwaitSample
             static async Task<string[][]> ReadCsvAsync (string fileName)
             {
                var result = new List<string[]> ();
- 
-                using (var sr = new StreamReader (fileName))    
-                {        
+
+                using (var sr = new StreamReader (fileName))
+                {
                     var header = await sr.ReadLineAsync ();
                     if (header != null)
                     {
@@ -163,9 +163,9 @@ namespace AsyncAwaitSample
             static string[][] ReadCsv (string fileName)
             {
                var result = new List<string[]> ();
- 
-                using (var sr = new StreamReader (fileName))    
-                {        
+
+                using (var sr = new StreamReader (fileName))
+                {
                     var header = sr.ReadLine ();
                     if (header != null)
                     {
