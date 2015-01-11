@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Introduction", "Introduction\Introduction.csproj", "{49C41453-8B4A-4459-BDD8-68D94A7C6C80}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo.001", "Demo.001", "{A53C18BF-4C05-4CDF-B499-DC20E6DD2995}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModel", "ViewModel\ViewModel.csproj", "{D5E0A0E1-9CBD-416B-93D5-2A5DEFC56DCF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B9D8C88E-606F-4813-B467-B4B1500F4EDC}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\packages.config = .nuget\packages.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo.002", "Demo.002", "{B2A9FC83-66A6-4ED7-851F-C1C61A661AF5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49C41453-8B4A-4459-BDD8-68D94A7C6C80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49C41453-8B4A-4459-BDD8-68D94A7C6C80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49C41453-8B4A-4459-BDD8-68D94A7C6C80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49C41453-8B4A-4459-BDD8-68D94A7C6C80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5E0A0E1-9CBD-416B-93D5-2A5DEFC56DCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5E0A0E1-9CBD-416B-93D5-2A5DEFC56DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5E0A0E1-9CBD-416B-93D5-2A5DEFC56DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5E0A0E1-9CBD-416B-93D5-2A5DEFC56DCF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{49C41453-8B4A-4459-BDD8-68D94A7C6C80} = {A53C18BF-4C05-4CDF-B499-DC20E6DD2995}
+		{D5E0A0E1-9CBD-416B-93D5-2A5DEFC56DCF} = {B2A9FC83-66A6-4ED7-851F-C1C61A661AF5}
+	EndGlobalSection
+EndGlobal

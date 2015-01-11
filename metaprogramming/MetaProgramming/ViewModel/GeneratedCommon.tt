@@ -1,0 +1,103 @@
+﻿// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A 
+// copy of the license can be found in the License.html file at the root of this distribution. 
+// If you cannot locate the  Microsoft Public License, please send an email to 
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+
+<#@ include file    = "$(SolutionDir)\packages\T4IncludeTemplate.1.1.0\T4\Header.ttinclude"      #>
+
+<#
+    var namedValueTypes = new []
+        {
+//            "object"                ,
+            "IPrettyPrintable"      ,
+            "string"                ,
+            "bool"                  ,
+            "OrderStatus"           ,
+            "long"                  ,
+            "decimal"               ,
+            "DateTime"              ,
+        };
+
+    var valueTypes = new []
+        {
+            "OrderStatus"           ,
+            "long"                  ,
+            "decimal"               ,
+            "DateTime"              ,
+        };
+#>
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace ViewModel
+{
+    public static partial class PrettyPrint
+    {
+<#
+    foreach (var namedValueType in namedValueTypes)
+    {
+#>
+        public static void PrintNamedValue (StringBuilder sb, HashSet<IPrettyPrintable> seen, int indent, string name, <#=namedValueType#> value)
+        {
+            Prelude (sb, indent, name);
+            PrintValue (sb, seen, indent + 1, value);
+        }
+
+        public static void PrintNamedValue (StringBuilder sb, HashSet<IPrettyPrintable> seen, int indent, string name, <#=namedValueType#>[] values)
+        {
+            Prelude (sb, indent, name);
+            PrintValue (sb, seen, indent + 1, values);
+        }
+
+        public static void PrintValue (StringBuilder sb, HashSet<IPrettyPrintable> seen, int indent, <#=namedValueType#>[] values)
+        {
+            if (values != null)
+            {
+                Indent (sb, indent);
+                sb.Append ("[");
+                sb.AppendLine ();
+
+                foreach (var value in values)
+                {
+                    PrintValue 
+                    (sb, seen, indent + 1, value);
+                }
+
+                Indent (sb, indent);
+                sb.Append ("]");
+                sb.AppendLine ();
+            }
+            else
+            {
+                PrintValue (sb, seen, indent, NullLiteral);
+            }
+        }
+<#
+    }
+#>
+
+<#
+    foreach (var valueType in valueTypes)
+    {
+#>
+        public static void PrintValue (StringBuilder sb, HashSet<IPrettyPrintable> seen, int indent, <#=valueType#> value)
+        {
+            Indent (sb, indent);
+            sb.Append (value);
+            sb.AppendLine ();
+        }
+
+<#
+    }
+#>
+    }
+}
