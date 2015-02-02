@@ -1,0 +1,180 @@
+﻿// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A 
+// copy of the license can be found in the License.html file at the root of this distribution. 
+// If you cannot locate the  Microsoft Public License, please send an email to 
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+
+<#@ include file    = "$(SolutionDir)\packages\T4IncludeTemplate.1.1.0\T4\Header.ttinclude"      #>
+
+using System;
+using System.ComponentModel;
+using System.Text;
+using System.Collections.Generic;
+
+<#
+    var model = new []
+    {
+        new ClassDefinition ("Customer")
+        {
+            Property ("long"        , "Id"          ),
+            Property ("DateTime"    , "Created"     ),
+            Property ("string"      , "FirstName"   ),
+            Property ("string"      , "LastName"    ),
+            Property ("DateTime"    , "BirthDate"   ),
+            Property ("Order[]"     , "Orders"      ),
+        },
+        new ClassDefinition ("Article")
+        {
+            Property ("long"        , "Id"          ),
+            Property ("DateTime"    , "Created"     ),
+            Property ("string"      , "Name"        ),
+            Property ("string"      , "Description" ),
+        },
+        new ClassDefinition ("Order")
+        {
+            Property ("long"        , "Id"          ),
+            Property ("DateTime"    , "Created"     ),
+            Property ("string"      , "Description" ),
+            Property ("bool"        , "IsRefund"    ),
+            Property ("OrderStatus" , "Status"      ),
+            Property ("decimal"     , "TotalAmount" ),
+            Property ("decimal"     , "VatAmount"   ),
+            Property ("OrderRow[]"  , "Rows"        ),
+        },
+        new ClassDefinition ("OrderRow")
+        {
+            Property ("long"        , "Id"          ),
+            Property ("DateTime"    , "Created"     ),
+            Property ("Article"     , "Article"     ),
+            Property ("Order"       , "ParentOrder" 
+            ),
+            Property ("decimal"     , "Quantity"    ),
+            Property ("string"      , "Name"        ),
+            Property ("string"      , "Description" ),
+            Property ("decimal"     , "TotalAmount" ),
+            Property ("decimal"     , "VatAmount"   ),
+        },
+    };
+#>
+
+
+namespace ViewModel
+{
+<#
+    foreach (var classDef in model)
+    {
+#>
+    // ------------------------------------------------------------------------
+    // ViewModel <#=classDef.Name#>
+    // ------------------------------------------------------------------------
+    public partial class <#=classDef.Name#> : INotifyPropertyChanged, IPrettyPrintable
+    {
+<#
+    foreach (var propDef in classDef)
+    {
+#>
+        // --------------------------------------------------------------------        
+        // Property <#=propDef.Name#> (<#=propDef.Type#>)
+        // --------------------------------------------------------------------        
+        public <#=propDef.Type#> <#=propDef.Name#>
+        {
+            get
+            {
+                return m_p<#=propDef.Name#>;
+            }
+            set
+            {
+                if (m_p<#=propDef.Name#> != value)
+                {
+                    var old = m_p<#=propDef.Name#>;
+                    m_p<#=propDef.Name#> = value;
+                    OnChanged<#=propDef.Name#> (old, m_p<#=propDef.Name#>);
+                    OnPropertyChanged ("<#=propDef.Name#>");
+                }
+            }
+        }
+        // --------------------------------------------------------------------        
+        <#=propDef.Type#> m_p<#=propDef.Name#>;
+        // --------------------------------------------------------------------        
+        partial void OnChanged<#=propDef.Name#> (
+            <#=propDef.Type#> oldValue, 
+            <#=propDef.Type#> newValue);
+        // --------------------------------------------------------------------        
+
+<#        
+    }
+#>        
+
+        public void PrintValue (StringBuilder sb, HashSet<IPrettyPrintable> seen, int indent)
+        {
+            PrettyPrint.PrintLiteral (sb, seen, indent, "class <#=classDef.Name#>");
+<#
+    foreach (var propDef in classDef)
+    {
+#>
+            PrettyPrint.PrintNamedValue (sb, seen, indent + 1, "<#=propDef.Name#>", <#=propDef.Name#>);
+<#
+    }
+#>
+        }
+
+
+        public override string ToString ()
+        {
+            return PrettyPrint.Print (this); 
+        }
+
+        void OnPropertyChanged (string name)
+        {
+            var pc = PropertyChanged;
+            if (pc != null)
+            {
+                pc (this, new PropertyChangedEventArgs (name));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+    }
+    // ------------------------------------------------------------------------
+
+<#
+    }
+#>
+}
+
+<#+
+
+    class ClassDefinition : BaseContainer<Root, PropertyDefinition>
+    {
+        public string Name;
+
+        public ClassDefinition (string name)
+        {
+            Name = name ?? S_NoName;
+        }
+
+    }
+
+    class PropertyDefinition : BaseEntity<ClassDefinition>
+    {
+        public string Type;
+        public string Name;
+    }
+
+    static PropertyDefinition Property (string type, string name)
+    {
+        return new PropertyDefinition
+        {
+            Type = type ?? S_NoType,
+            Name = name ?? S_NoName,
+        };
+    }
+
+
+#>
