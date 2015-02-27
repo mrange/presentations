@@ -119,17 +119,17 @@ let main argv =
     | Some v -> printfn "Has value: %A" v
     | _ -> printfn "No value"
 
-    // 8. Types
+    // 9. Types
     use x = new X(1, "Testing")
     printfn "Id: %d, Name:%s" x.Id x.Name
 
-    // 9. printf
+    // 10. printf
     printfn "An integer: %d" 1
     printfn "A double: %f" 3.14
     printfn "A string: %s" "Testing"
     printfn "%d, %f, %s" 1 3.14 "Testing"
 
-    // 10. Fsharp.Data
+    // 11. Fsharp.Data
     let ratings = (Netflix.Load "netflix.csv").Rows |> Seq.toArray
 
     let sorted  = ratings |> Array.sortBy (fun rating -> rating.Rating)
@@ -138,7 +138,7 @@ let main argv =
     let rated  = ratings |> Array.sortBy (fun rating -> rating.Date)
     printfn "Sorted: %A" rated
 
-    // 11. Reflections
+    // 12. Reflections
     //   1. No nulls
     //   2. Prefer Immutability
     //   3. Excellent language reference
