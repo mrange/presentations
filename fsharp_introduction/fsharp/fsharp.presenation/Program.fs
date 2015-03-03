@@ -6,21 +6,21 @@ let main argv =
 
     // 3. Functions
 
-    // 4. Records
+    // 4. List comprehension
 
-    // 5. List comphrension
+    // 5. "LINQ"
 
-    // 6. "LINQ"
+    // 6. ADT
 
-    // 7. ADT
+    // 7. Records
 
-    // 8. No nulls
+    // 8. Types
 
-    // 9. Types
+    // 9. printf
 
-    // 10. printf
+    // 10. FSharp.Data
 
-    // 11. Type Providers
+    // 11. WebSharper
 
     // 12. Reflections
     //   2. Prefer Immutability
@@ -35,3 +35,4 @@ let main argv =
     //      The most powerful construct in .NET universe
 
     0
+
