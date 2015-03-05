@@ -7,6 +7,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsharp", "fsharp\fsharp.fsp
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsharp.presenation", "fsharp.presenation\fsharp.presenation.fsproj", "{32DEF95A-8E14-4F65-B6FE-477BA3E6D01C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "gravity", "gravity\gravity.fsproj", "{4E07F729-CB5D-4E70-8C42-BBB8EABB2D39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{32DEF95A-8E14-4F65-B6FE-477BA3E6D01C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32DEF95A-8E14-4F65-B6FE-477BA3E6D01C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32DEF95A-8E14-4F65-B6FE-477BA3E6D01C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E07F729-CB5D-4E70-8C42-BBB8EABB2D39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E07F729-CB5D-4E70-8C42-BBB8EABB2D39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E07F729-CB5D-4E70-8C42-BBB8EABB2D39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E07F729-CB5D-4E70-8C42-BBB8EABB2D39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
