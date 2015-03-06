@@ -13,6 +13,12 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "turtle", "turtle\turtle.fsp
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "RayTracer", "RayTracer\RayTracer.fsproj", "{8C2F8078-7425-4592-932F-28EF0EC32091}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farseer Physics", "extermal\Farseer Physics Engine 3.5\Farseer Physics.csproj", "{A4610E4C-DD34-428B-BABB-779CA0B5993A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0. External", "0. External", "{5169E537-32AE-40A1-967A-0C89DAB2CEB9}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "physics", "physics\physics.fsproj", "{B0E89D13-86F2-4983-AEDE-561BCA10D955}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,8 +45,19 @@ Global
 		{8C2F8078-7425-4592-932F-28EF0EC32091}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C2F8078-7425-4592-932F-28EF0EC32091}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C2F8078-7425-4592-932F-28EF0EC32091}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A} = {5169E537-32AE-40A1-967A-0C89DAB2CEB9}
 	EndGlobalSection
 EndGlobal
