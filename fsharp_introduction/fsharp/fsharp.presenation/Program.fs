@@ -2,14 +2,13 @@
 let main argv = 
     // 1. Hello world
 
-    // 2. Values
+    // 2. Values (don't forget tuples)
 
     // 3. Functions
 
     // 4. List comprehension
 
     // 5. "LINQ"
-
 
     // 6. ADT
 
