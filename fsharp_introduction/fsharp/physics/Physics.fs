@@ -24,9 +24,11 @@ module Physics =
     type Resources =
         {
             BlackBrush  : Direct2D1.Brush
+            GreenBrush  : Direct2D1.Brush
+            VioletBrush : Direct2D1.Brush
         }           
 
-        static member New bb = { BlackBrush = bb }
+        static member New bb gb vb = { BlackBrush = bb; GreenBrush = gb; VioletBrush = vb }
 
     type BodyRenderer = Resources*Direct2D1.RenderTarget*FarseerPhysics.Dynamics.Body -> unit
 
@@ -47,6 +49,17 @@ module Physics =
                 <*> Matrix3x2.Translation (dv2 pos)
             rt.Transform <- transform
 
+            rt.FillRectangle (rect, res.GreenBrush)
             rt.DrawRectangle (rect, res.BlackBrush)
 
             rt.Transform <- t
+
+    let RenderCircle r : BodyRenderer =
+        fun (res, rt, body) -> 
+
+            let pos     = body.Position
+
+            let ellipse = Direct2D1.Ellipse (dv2 pos, r, r) 
+
+            rt.FillEllipse (ellipse, res.VioletBrush)
+            rt.DrawEllipse (ellipse, res.BlackBrush)

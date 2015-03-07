@@ -84,18 +84,20 @@ type Device (form : Windows.RenderForm) =
 
     let solid (c : Color)   = new Direct2D1.SolidColorBrush (d2dRenderTarget, c.ToColor4 ())                                    
 
-    let brownBrush              = solid Color.Brown
-    let limeGreenBrush          = solid Color.LimeGreen
-    let limeBrush               = solid Color.Lime
-    let mediumVioletRedBrush    = solid Color.MediumVioletRed
+    let blackBrush                  = solid Color.Black
+    let brownBrush                  = solid Color.Brown
+    let limeGreenBrush              = solid Color.LimeGreen
+    let limeBrush                   = solid Color.Lime
+    let mediumVioletRedBrush        = solid Color.MediumVioletRed
 
-    member x.Width              = width
-    member x.Height             = height
-
+    member x.BlackBrush             = blackBrush
     member x.BrownBrush             = brownBrush
     member x.LimeGreenBrush         = limeGreenBrush 
     member x.LimeBrush              = limeBrush      
     member x.MediumVioletRedBrush   = mediumVioletRedBrush
+
+    member x.Width                  = width
+    member x.Height                 = height
 
     member x.Draw (a : Direct2D1.RenderTarget->unit) =
         d2dRenderTarget.BeginDraw ()
@@ -111,6 +113,7 @@ type Device (form : Windows.RenderForm) =
             TryRun limeBrush.Dispose 
             TryRun limeGreenBrush.Dispose 
             TryRun brownBrush.Dispose 
+            TryRun blackBrush.Dispose 
             TryRun d2dRenderTarget.Dispose 
             TryRun surface.Dispose 
             TryRun backBuffer.Dispose 

@@ -57,7 +57,7 @@ module PhysicsWindow =
 
             let d = !device
                                 
-            let r = Physics.Resources.New d.BrownBrush
+            let r = Physics.Resources.New d.BlackBrush d.LimeGreenBrush d.MediumVioletRedBrush
 
             d.Draw <| fun d2dRenderTarget -> 
                 
