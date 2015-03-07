@@ -12,30 +12,28 @@
 
 namespace Physical
 
-open System
-open System.Diagnostics
-open System.Threading
-open System.Collections.Generic
-
-open SharpDX
+open FarseerPhysics
+open FarseerPhysics.Dynamics
+open FarseerPhysics.Factories
+open Microsoft.Xna.Framework
 
 module Physics = 
 
     type Resources =
         {
-            BlackBrush  : Direct2D1.Brush
-            GreenBrush  : Direct2D1.Brush
-            VioletBrush : Direct2D1.Brush
+            BlackBrush  : SharpDX.Direct2D1.Brush
+            GreenBrush  : SharpDX.Direct2D1.Brush
+            VioletBrush : SharpDX.Direct2D1.Brush
         }           
 
         static member New bb gb vb = { BlackBrush = bb; GreenBrush = gb; VioletBrush = vb }
 
-    type BodyRenderer = Resources*Direct2D1.RenderTarget*FarseerPhysics.Dynamics.Body -> unit
+    type BodyRenderer = Resources*SharpDX.Direct2D1.RenderTarget*Body -> unit
 
     let RenderRect w h : BodyRenderer =
         let hw = w / 2.F
         let hh = h / 2.F
-        let rect = RectangleF (-hw, -hh, w, h)
+        let rect = SharpDX.RectangleF (-hw, -hh, w, h)
         fun (res, rt, body) -> 
 
             let pos     = body.Position
@@ -45,8 +43,8 @@ module Physics =
 
             let transform = 
                 t
-                <*> Matrix3x2.Rotation rot
-                <*> Matrix3x2.Translation (dv2 pos)
+                <*> SharpDX.Matrix3x2.Rotation rot
+                <*> SharpDX.Matrix3x2.Translation (dv2 pos)
             rt.Transform <- transform
 
             rt.FillRectangle (rect, res.GreenBrush)
@@ -59,7 +57,31 @@ module Physics =
 
             let pos     = body.Position
 
-            let ellipse = Direct2D1.Ellipse (dv2 pos, r, r) 
+            let ellipse = SharpDX.Direct2D1.Ellipse (dv2 pos, r, r) 
 
             rt.FillEllipse (ellipse, res.VioletBrush)
             rt.DrawEllipse (ellipse, res.BlackBrush)
+
+    let pi      = float32 System.Math.PI
+    let v2 x y  = Vector2(x,y)
+    let world   = World (Vector2(0.F,10.F))
+
+    let adorn bt x y rot (br : BodyRenderer) (body : Body) = 
+        body.BodyType <- bt
+        body.UserData <- box br
+        body.SetTransform(v2 x y, rot)
+
+    let rect bt x y rot w h = 
+        adorn bt x y rot (RenderRect w h) <| BodyFactory.CreateRectangle(world, w, h, 1.F)
+
+    let circle bt x y r = 
+        adorn bt x y 0.F (RenderCircle r) <| BodyFactory.CreateCircle(world, r, 1.F)
+
+    let srect   = rect BodyType.Static
+    let drect   = rect BodyType.Dynamic
+    let krect   = rect BodyType.Kinematic
+
+    let scircle = circle BodyType.Static
+    let dcircle = circle BodyType.Dynamic
+    let kcircle = circle BodyType.Kinematic
+

@@ -14,42 +14,17 @@ open Physical
 
 open System
 
-open FarseerPhysics
-open FarseerPhysics.Dynamics
-open FarseerPhysics.Factories
-open Microsoft.Xna.Framework
+open Physics
 
 [<EntryPoint>]
 let main argv = 
-
-    let pi      = float32 Math.PI
-    let v2 x y  = Vector2(x,y)
-    let world   = World (Vector2(0.F,10.F))
-
-    let adorn bt x y rot (br : Physics.BodyRenderer) (body : Body) = 
-        body.BodyType <- bt
-        body.UserData <- box br
-        body.SetTransform(v2 x y, rot)
-
-    let rect bt x y rot w h= 
-        adorn bt x y rot (Physics.RenderRect w h) <| BodyFactory.CreateRectangle(world, w, h, 1.F)
-
-    let circle bt x y r = 
-        adorn bt x y 0.F (Physics.RenderCircle r) <| BodyFactory.CreateCircle(world, r, 1.F)
-
-    let srect   = rect BodyType.Static
-    let drect   = rect BodyType.Dynamic
-    let krect   = rect BodyType.Kinematic
-
-    let scircle = circle BodyType.Static
-    let dcircle = circle BodyType.Dynamic
-    let kcircle = circle BodyType.Kinematic
 
     let random = Random 19740531
 
     //      x       y       rot     w       h
     srect   500.F   510.F   0.1F    800.F   20.F
     drect   700.F   475.F   0.F     50.F    50.F
+    drect   200.F   375.F   0.F     50.F    50.F
 
     //      x       y       r
     dcircle 500.F   450.F   50.F
