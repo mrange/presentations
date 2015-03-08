@@ -2,9 +2,12 @@
 let main argv = 
     // 1. Hello world
 
-    // 2. Values (don't forget tuples)
+    // 2. Values
+    //  tuples
+    //  arrays
 
     // 3. Functions
+    //  curry
 
     // 4. List comprehension
 
