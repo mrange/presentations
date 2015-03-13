@@ -1,6 +1,12 @@
-﻿[<EntryPoint>]
+﻿
+[<EntryPoint>]
 let main argv = 
     // 1. Hello world
+
+    // Input:
+    // Everything is expressions
+    // F# <=> C# interop
+    // unit value
 
     // 2. Values
     //  tuples
@@ -9,13 +15,17 @@ let main argv =
     // 3. Functions
     //  curry
 
+    // int*int*int -> int
+    // int -> int -> int -> int
+    // int -> (int -> (int -> int))
+
     // 4. List comprehension
 
     // 5. "LINQ"
 
-    // 6. ADT
+    // 6. Records
 
-    // 7. Records
+    // 7. ADT
 
     // 8. Types
 
@@ -41,4 +51,3 @@ let main argv =
     //      The most powerful construct in .NET universe
 
     0
-
