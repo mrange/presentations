@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0. External", "0. External"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "physics", "physics\physics.fsproj", "{B0E89D13-86F2-4983-AEDE-561BCA10D955}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "interactive_sort", "interactive_sort\interactive_sort.fsproj", "{C98B952A-6912-499F-BF27-7D5304799B58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,10 @@ Global
 		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0E89D13-86F2-4983-AEDE-561BCA10D955}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C98B952A-6912-499F-BF27-7D5304799B58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C98B952A-6912-499F-BF27-7D5304799B58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C98B952A-6912-499F-BF27-7D5304799B58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C98B952A-6912-499F-BF27-7D5304799B58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
