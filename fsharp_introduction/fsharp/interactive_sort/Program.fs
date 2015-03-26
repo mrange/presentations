@@ -13,6 +13,10 @@
 open System
 open System.Diagnostics                
 
+open Canvas
+
+open SharpDX
+
 module StateMonad =
 
     type State<'T,'S> = 'S -> 'T*'S
@@ -263,89 +267,110 @@ module Sorting =
             return a
         }
 
-    let rec quickSort (vs : 'V []) : Sorter<'V []> =
-        let rec impl (r : InplaceRange<'V>) : Sorter<unit> =
-            state {
-                let! range = processRange r
-                match range with
-                | None ->
+    module Details =
+        type InplaceSorter<'V> = InplaceRange<'V> -> Sorter<unit>
+
+        let inplaceNullSort (r : InplaceRange<'V>) : Sorter<unit> =
+            let rec impl (r : InplaceRange<'V>) : Sorter<unit> =
+                state {
                     return ()
-                | Some (b,e) ->
-                    let rb   = ref b
-                    let re   = ref e
+                }
+            impl r
 
-                    // Store the pivot
-                    let! pi,p= pickRandomPivot r
-                    let ps = !re - 1
-                    do! swapValues pi ps r
-                    do! incrementEnd re -1
+        let inplaceInsertionSort (r : InplaceRange<'V>) : Sorter<unit> =
+            let rec impl (r : InplaceRange<'V>) : Sorter<unit> =
+                state {
+                    let! range = processRange r
+                    match range with
+                    | None ->
+                        return ()
+                    | Some (b,e) ->
+                        do! impl <| subRange b (e - 1) r
 
-                    let comparer v = v >= p
+                        let re      = ref e
+                        do! incrementEnd re -1
+                        let! _,p    = pickPivot !re r
 
-                    // + 1 because no use swapping to same position
-                    while (!rb + 1) < !re do
+                        while b < !re do
+                        
+                            let c = !re - 1
+                            let! result = compareToPivot (fun v -> v > p) c r
+                            if result then
+                                do! swapValues c !re r
+                                do! incrementEnd re -1
+                            else
+                                // This exits the loop
+                                re := b
+                }
+            impl r
+
+        let inplaceHybridSort ((cutoff,inner) : int*InplaceSorter<'V>)  (r : InplaceRange<'V>) : Sorter<unit> =
+            let rec impl (r : InplaceRange<'V>) : Sorter<unit> =
+                state {
+                    let! range = processRange r
+                    match range with
+                    | None ->
+                        return ()
+                    | Some (b, e) when e - b < cutoff -> 
+                        return! inner r
+                    | Some (b,e) ->
+                        let rb   = ref b
+                        let re   = ref e
+
+                        // Store the pivot
+                        let! pi,p= pickRandomPivot r
+                        let ps = !re - 1
+                        do! swapValues pi ps r
+                        do! incrementEnd re -1
+
+                        let comparer v = v >= p
+
+                        // + 1 because no use swapping to same position
+                        while (!rb + 1) < !re do
+
+                            let c = !rb
+                            let! result = compareToPivot comparer c r
+                            if result then
+                                do! swapValues c (!re - 1) r
+                                do! incrementEnd re -1
+                            else
+                                do! incrementBegin rb 1
 
                         let c = !rb
                         let! result = compareToPivot comparer c r
+
                         if result then
-                            do! swapValues c (!re - 1) r
-                            do! incrementEnd re -1
+                            // c should be member of right range
+                            // Swap pivot into place
+                            do! swapValues c ps r
+                            let! lr, rr = splitRange c r
+                            do! impl lr
+                            do! impl rr
+                        elif c + 1 < ps then
+                            // c should be member of left range
+                            // Swap pivot into place
+                            do! swapValues (c + 1) ps r
+                            let! lr, rr = splitRange (c + 1) r
+                            do! impl lr
+                            do! impl rr
                         else
-                            do! incrementBegin rb 1
-
-                    let c = !rb
-                    let! result = compareToPivot comparer c r
-
-                    if result then
-                        // c should be member of right range
-                        // Swap pivot into place
-                        do! swapValues c ps r
-                        let! lr, rr = splitRange c r
-                        do! impl lr
-                        do! impl rr
-                    elif c + 1 < ps then
-                        // c should be member of left range
-                        // Swap pivot into place
-                        do! swapValues (c + 1) ps r
-                        let! lr, rr = splitRange (c + 1) r
-                        do! impl lr
-                        do! impl rr
-                    else
-                        // c should be member of left range
-                        // No need to swap as c + 1 is pointing to pivot pos
-                        // right range will be empty
-                        let! lr, rr = splitRange (c + 1) r
-                        Debug.Assert rr.IsEmpty
-                        do! impl lr
-            }
-        inplaceSorter impl vs
+                            // c should be member of left range
+                            // No need to swap as c + 1 is pointing to pivot pos
+                            // right range will be empty
+                            let! lr, rr = splitRange (c + 1) r
+                            Debug.Assert rr.IsEmpty
+                            do! impl lr
+                }
+            impl r
 
     let rec insertionSort (vs : 'V []) : Sorter<'V []> =
-        let rec impl (r : InplaceRange<'V>) : Sorter<unit> =
-            state {
-                let! range = processRange r
-                match range with
-                | None ->
-                    return ()
-                | Some (b,e) ->
-                    do! impl <| subRange b (e - 1) r
+        inplaceSorter Details.inplaceInsertionSort vs
 
-                    let re      = ref e
-                    do! incrementEnd re -1
-                    let! _,p    = pickPivot !re r
+    let rec quickSort (vs : 'V []) : Sorter<'V []> =
+        inplaceSorter (Details.inplaceHybridSort (0, Details.inplaceNullSort)) vs
 
-                    while b < !re do
-                        
-                        let c = !re - 1
-                        let! result = compareToPivot (fun v -> v > p) c r
-                        if result then
-                            do! swapValues c !re r
-                            do! incrementEnd re -1
-                        else
-                            // This exists the loop
-                            re := b
-            }
-        inplaceSorter impl vs
+    let rec hybridSort (cutoff : int) (vs : 'V []) : Sorter<'V []> =
+        inplaceSorter (Details.inplaceHybridSort (cutoff, Details.inplaceInsertionSort)) vs
 
     let rec mergeSort (vs : 'V []) : Sorter<'V []> =
         let rec impl (cpy : 'V []) (r : InplaceRange<'V>) : Sorter<unit> =
@@ -399,65 +424,171 @@ module Sorting =
 
 open Sorting
 
+module Trickle =
+
+    let createTrickle (delayInMs : int) (b : int) (e : int) : unit -> int =
+        if delayInMs < 1 then
+            fun () -> e
+        else
+            let sw = Stopwatch ()
+            sw.Start ()
+            fun () ->
+                let i = int <| sw.ElapsedMilliseconds / (int64 delayInMs)
+                clamp (i + b) b e
+
+
+type VisualState =
+    {
+        Values      : int []
+        MaxValue    : int
+        PivotIndex  : int option
+        BeginIndex  : int option
+        EndIndex    : int option
+    }
+
+    static member Empty = 
+        {
+            Values      = [||]
+            MaxValue    = 0
+            PivotIndex  = None
+            BeginIndex  = None
+            EndIndex    = None
+        }
+
+let animateArrayAction (name : string) (aas : ArrayAction []) =
+
+    let trickle = Trickle.createTrickle 10 0 aas.Length
+
+    let lastId  = ref 0
+
+    let state   = ref []
+
+    let width   = 1600.F
+    let height  = 1200.F
+
+    Window.Show ("Interactive sort - " + name) (int width) (int height) <| fun dev renderTarget ->
+        renderTarget.Clear Color.Black
+
+        let t = trickle ()
+        for i in !lastId..(t - 1) do
+            let aa = aas.[i]
+
+            let next =
+                match !state, aa with
+                | s         , PushArray a       -> 
+                    let vs  = a :?> int[]
+                    let max = vs |> Array.max   // TODO: Handle empty
+                    { VisualState.Empty with Values = vs; MaxValue = max }::s
+                | _::rest   , PopArray          -> rest                     
+                | s::rest   , PushFrame         -> s::s::rest
+                | _::rest   , PopFrame          -> rest
+                | s::rest   , SwapValues (f,t)  ->
+                    let tmp = s.Values.[t]
+                    s.Values.[t] <- s.Values.[f]
+                    s.Values.[f] <- tmp
+                    let ns = 
+                        match s.PivotIndex with
+                        | Some p when p = t -> { s with PivotIndex = Some f }
+                        | Some p when p = f -> { s with PivotIndex = Some t }
+                        | _ -> s
+                    ns::rest
+                | s::rest   , PickPivot p       ->
+                    let ns = { s with PivotIndex = Some p }
+                    ns::rest
+                | s::rest   , RangeBegin b      ->
+                    let ns = { s with BeginIndex = Some b }
+                    ns::rest
+                | s::rest   , RangeEnd e        ->
+                    let ns = { s with EndIndex = Some e }
+                    ns::rest
+                | s         , _                 -> s
+
+            state := next
+
+        lastId := t
+
+
+        match !state with
+        | []    -> ()
+        | s::_  ->
+            let inline solid c  = dev.GetBrush (SolidBrush c)
+            let baseBrush       = solid Color.BlueViolet
+            let valueFillBrush  = solid Color.YellowGreen
+            let valueStrokeBrush= solid Color.White
+            let pivotFillBrush  = solid Color.Red
+            let rangeBrush      = solid Color.LightBlue
+            let textBrush       = solid Color.White
+            let textFormat      = dev.GetTextFormat (SimpleTextFormat ("Consolas", 36.F))
+
+            let rect = RectangleF (100.F, 100.F, 800.F, 40.F)
+
+            let step = rect.Width / float32 s.Values.Length
+            renderTarget.FillRectangle (rect, baseBrush)
+
+            let multiplier = 1.F
+
+            let makeV2 i =
+                let x = rect.X + (float32 i) * step
+                let y = rect.Bottom
+                v2 x y
+
+            let makeRect i = 
+                let v = s.Values.[i]
+                let x = rect.X + (float32 i) * step
+                let y = rect.Bottom
+                let w = step
+                let h = multiplier * float32 v
+                let r = rectf x y w h
+                r
+
+            match s.BeginIndex, s.EndIndex with
+            | Some b, Some e ->
+                let bv2 = makeV2 b
+                let ev2 = makeV2 e + (v2 0.F (multiplier * float32 s.MaxValue + 50.F))
+                let r   = bounds bv2 ev2
+                renderTarget.FillRectangle (r, rangeBrush)
+            | _ -> ()
+
+            for i in 0..(s.Values.Length - 1) do
+                let r       = makeRect i
+                renderTarget.FillRectangle (r, valueFillBrush)
+                renderTarget.DrawRectangle (r, valueStrokeBrush, 2.0F)
+
+            match s.PivotIndex with
+            | Some i -> 
+                let r       = makeRect i
+                renderTarget.FillRectangle (r, pivotFillBrush)
+            | _ -> ()
+
+            renderTarget.DrawText ("QuickSort", textFormat, rect, textBrush)
+
+let animateSorter (random : Random) (vs : 'V []) (name : string) (sorter : 'V [] -> Sorter<_>) =
+
+    let actions     = ResizeArray<ArrayAction>()
+    let witness     = Witness actions.Add
+
+    let s = sorter vs
+
+    ignore <| run random witness s
+
+    animateArrayAction name <| actions.ToArray ()
+
+
 [<EntryPoint>]
 let main argv = 
-
     let random      = Random(19740531)
+
+    let vs = [| for x in 0..100 -> random.Next (300) |]
 
     let sorters =
         [|
-            "mergeSort"     , mergeSort
-            "quickSort"     , quickSort
             "insertionSort" , insertionSort
+            "quickSort"     , quickSort
+            "hybridSort"    , hybridSort 8
         |]
 
-    let testDatum = 
-        [|
-            [| |]
-            [| 1 |]
-            [| 1; 1 |]
-            [| 1; 2 |]
-            [| 1; 2; 3; 4 |]
-            [| 4; 3; 2; 1 |]
-            [| 3; 1; 4; 1; 5; 9; 2; 6; 5; 4 |]
-            [| for x in 0..10 -> random.Next(1000) |]
-        |]
+    let name, sorter = sorters.[2]
 
-    let testRun (testData : int[]) (name : string) (s : int [] -> Sorter<int[]>) : unit = 
-        printfn "Running test: %s\nInput:%A" name testData
-
-        let cost = ref 0
-        let witness = Witness <| fun aa -> 
-            let c = 
-                match aa with 
-                | PushArray _       -> 0
-                | PopArray          -> 0
-                | PushFrame         -> 0
-                | PopFrame          -> 0
-                | SwapValues _      -> 1
-                | PickPivot _       -> 0
-                | CompareToPivot _  -> 1
-                | RangeBegin _      -> 0
-                | RangeEnd _        -> 0
-            increment cost c
-
-        let expected= testData |> Array.sort
-        let actual  = testData |> s |> (run random witness)
-
-        let e,r = 
-            if expected = actual then
-                true, "SUCCESS"
-            else
-                false, "FAILURE"
-
-        if e then
-            printfn "%s - Cost:%d" r !cost
-        else
-            printfn "%s - Cost:%d\nActual:%A\nExpected:%A" r !cost actual expected
-
-    for testData in testDatum do
-        for name, sorter in sorters do
-            testRun testData name sorter
-
+    animateSorter random vs name sorter
 
     0

@@ -5,15 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>c98b952a-6912-499f-bf27-7d5304799b58</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>interactive_sort</RootNamespace>
-    <AssemblyName>interactive_sort</AssemblyName>
+    <ProjectGuid>fc15871b-9368-4c71-8b9e-cb62564f88fd</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>canvas</RootNamespace>
+    <AssemblyName>canvas</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
-    <Name>interactive_sort</Name>
-    <NuGetPackageImportStamp>94549bdc</NuGetPackageImportStamp>
+    <Name>canvas</Name>
+    <NuGetPackageImportStamp>60cca027</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,9 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Debug\interactive_sort.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
+    <DocumentationFile>bin\Debug\canvas.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,9 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\interactive_sort.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
+    <DocumentationFile>bin\Release\canvas.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -62,8 +57,10 @@
     <Error Condition="!Exists('..\packages\SharpDX.2.6.3\build\SharpDX.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SharpDX.2.6.3\build\SharpDX.targets'))" />
   </Target>
   <ItemGroup>
-    <Compile Include="Program.fs" />
-    <None Include="App.config" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="CanvasAutoOpen.fs" />
+    <Compile Include="Device.fs" />
+    <Compile Include="Window.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -88,11 +85,6 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
-    <ProjectReference Include="..\canvas\canvas.fsproj">
-      <Name>canvas</Name>
-      <Project>{fc15871b-9368-4c71-8b9e-cb62564f88fd}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
