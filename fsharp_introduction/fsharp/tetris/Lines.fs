@@ -38,7 +38,7 @@ let mutates_SetCell (Lines (bb,lines)) (pos : IntVector) (cell : Cell) : unit =
 
 let removeFullLines (Lines (bb,lines) as previousLines) : int*Lines =
   let size = bb.Size
-  let keptLines = 
+  let keptLines =
     lines
     |> Array.filter (function Line cells -> cells |> Array.exists (fun c -> c <> Set))
 
@@ -54,7 +54,7 @@ let removeFullLines (Lines (bb,lines) as previousLines) : int*Lines =
     removed, Lines (bb, newLines)
 
 let copyLines (Lines (bb,lines)) : Lines =
-  let newLines = 
+  let newLines =
     [|
       for (Line line) in lines -> Line (line |> Array.copy)
     |]

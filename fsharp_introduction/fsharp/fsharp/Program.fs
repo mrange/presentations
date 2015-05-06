@@ -36,7 +36,7 @@ module BinaryTree =
 
     let aTree = Node (2, 20, Leaf (1, 10), Node (3, 30, Leaf (4, 40), Leaf (5, 50)))
 
-    let rec find f t = 
+    let rec find f t =
         match t with
         | Empty -> None
         | Leaf (k,v) when f = v -> Some v
@@ -48,7 +48,7 @@ module BinaryTree =
 open System
 // Primary constructors
 type X(id : int, name : string) =
-    
+
     interface IDisposable with
         member x.Dispose () = printfn "Disposed"
 
@@ -61,7 +61,7 @@ open BinaryTree
 type Netflix =  FSharp.Data.CsvProvider<"netflix.csv">
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     // 1. Hello world
     printfn "Hello world"
 
@@ -93,14 +93,14 @@ let main argv =
     // 5. List comphrension
     let v = [| for x in 0..3 -> x |]
     let v = [| for x in 0..3 -> x*x |]
-    let i = [| for x in 0..3 -> 
-                [| for y in 0..3 -> 
-                    if x = y then 1. else 0. 
-                |] 
+    let i = [| for x in 0..3 ->
+                [| for y in 0..3 ->
+                    if x = y then 1. else 0.
+                |]
             |]
     printfn "Identity: %A" i
     let i = [| for x in 0..3 do
-                for y in 0..3 do yield if x = y then 1. else 0. 
+                for y in 0..3 do yield if x = y then 1. else 0.
             |]
     printfn "Identity: %A" i
 
@@ -117,7 +117,7 @@ let main argv =
     // 7. ADT
     let v1 = find 3 aTree
     let v2 = find 10 aTree
-    
+
     printfn "Tree: %A" aTree
     printfn "v1: %A" v1
     printfn "v2: %A" v2

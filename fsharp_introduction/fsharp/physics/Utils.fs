@@ -24,9 +24,9 @@ module Utils =
             let n = float32 <| x.NextDouble ()
             inclusiveFrom + n * (inclusiveTo - inclusiveFrom)
 
-    let dv2 (v : Microsoft.Xna.Framework.Vector2) : Vector2 = 
+    let dv2 (v : Microsoft.Xna.Framework.Vector2) : Vector2 =
         Vector2 (v.X, v.Y)
-    
+
     let Deg2Rad = float32 Math.PI/180.F
     let Rad2Deg = 1.F / Deg2Rad
 
@@ -36,14 +36,14 @@ module Utils =
     let inline ( <*> ) (l : Matrix3x2) (r : Matrix3x2) = Matrix3x2.Multiply (l,r)
     let inline Normalize (v : Vector2) = v.Normalize (); v
 
-    let TryRun (a : unit -> unit) = 
+    let TryRun (a : unit -> unit) =
         try
             a ()
         with
         | e -> printfn "Caught exception: %A" e
 
-    type Disposer (action : unit->unit) = 
-    
+    type Disposer (action : unit->unit) =
+
         interface IDisposable with
             member x.Dispose () = TryRun action
 

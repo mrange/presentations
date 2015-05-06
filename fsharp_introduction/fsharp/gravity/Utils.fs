@@ -18,7 +18,7 @@ open System
 
 [<AutoOpen>]
 module Utils =
-    
+
     type Random with
         member x.NextFloat32 (inclusiveFrom : float32) (inclusiveTo : float32) =
             let n = float32 <| x.NextDouble ()
@@ -35,13 +35,13 @@ module Utils =
 
     let inline sqr3 (v : float32) = float32 <| Math.Pow (float v, 1./3.)
 
-    let TryRun (a : unit -> unit) = 
+    let TryRun (a : unit -> unit) =
         try
             a ()
         with
         | e -> printfn "Caught exception: %A" e
 
-    let TryDispose (d : #IDisposable) = 
+    let TryDispose (d : #IDisposable) =
         if d <> null then
             try
                 d.Dispose ()
@@ -51,10 +51,10 @@ module Utils =
     let TryDisposeList (ds : seq<#IDisposable>) =
         for d in ds do
             TryDispose d
-        
 
-    type Disposer (action : unit->unit) = 
-    
+
+    type Disposer (action : unit->unit) =
+
         interface IDisposable with
             member x.Dispose () = TryRun action
 

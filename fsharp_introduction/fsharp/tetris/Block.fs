@@ -42,8 +42,8 @@ let getBitmap = function
 
 type Orientation = Orientation of int
 
-let rotate (block : Block) (Orientation orientation) : Orientation = 
-  let orientations = 
+let rotate (block : Block) (Orientation orientation) : Orientation =
+  let orientations =
     match block with
     | O -> 1
     | I | S | Z -> 2
@@ -52,7 +52,7 @@ let rotate (block : Block) (Orientation orientation) : Orientation =
 
 let shapeOffset = v -2 -1
 
-let foldBits (block : Block) (Orientation orientation) (initial : 'TState) (visitor : 'TState -> bool -> IntVector -> 'TState) : 'TState = 
+let foldBits (block : Block) (Orientation orientation) (initial : 'TState) (visitor : 'TState -> bool -> IntVector -> 'TState) : 'TState =
   let l0,l1,l2,l3 = getBitmap block
 
   let inline rotate (pos : IntVector) =
@@ -62,7 +62,7 @@ let foldBits (block : Block) (Orientation orientation) (initial : 'TState) (visi
     | 2 -> v -pos.X -pos.Y
     | 3 -> v -pos.Y pos.X
     | _ -> v pos.X  pos.Y
- 
+
   let inline getLine y =
     match y with
     | 0 -> l0
@@ -71,7 +71,7 @@ let foldBits (block : Block) (Orientation orientation) (initial : 'TState) (visi
     | 3 -> l3
     | _ -> l0
 
-  let mutable state = initial    
+  let mutable state = initial
 
   for y in 0..3 do
     for x in 0..3 do

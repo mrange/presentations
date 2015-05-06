@@ -17,12 +17,12 @@ open SharpDX
 open System
 
 module Gravity =
-    
+
     let M = 10.F
 
     type Particle =
         {
-            mutable Mass        : float32 
+            mutable Mass        : float32
             mutable Radius      : float32
             mutable Current     : Vector2
             mutable Velocity    : Vector2
@@ -42,22 +42,22 @@ module Gravity =
                                                   force
 
 
-        static member inline New m c v = 
+        static member inline New m c v =
             {
-                Mass        = m 
+                Mass        = m
                 Radius      = sqr3 m
-                Current     = c 
+                Current     = c
                 Velocity    = v
             }
 
-    let CreateParticle (center : Particle) (mass : float32) (radius : float32) (angle : float32) (velocityScale : float32) = 
+    let CreateParticle (center : Particle) (mass : float32) (radius : float32) (angle : float32) (velocityScale : float32) =
         let x   = radius * sin angle
         let y   = radius * cos angle
         let p   = Particle.New (float32 mass) (center.Current + (V2 x y)) (V2 0.F 0.F)
         let gf  = center.GravityForce p
         let v   = velocityScale * sqrt (radius * gf / mass)
-        let vx  = v * cos angle 
-        let vy  = - v * sin angle 
+        let vx  = v * cos angle
+        let vy  = - v * sin angle
         p.Velocity <- center.Velocity + (V2 vx vy)
         p
 
@@ -82,7 +82,7 @@ module Gravity =
                 inner.Velocity  <-inner.Velocity + timeStep * force*diff / inner.Mass
         particles
 
-    let ApplyInertia (timeStep : float32) (particles : Particle []) = 
+    let ApplyInertia (timeStep : float32) (particles : Particle []) =
         let last = particles.Length - 1
         for p in 0..last do
             let particle        = particles.[p]
@@ -90,7 +90,7 @@ module Gravity =
             particle.Current    <- newPos
         particles
 
-    let ApplyCollision (particles : Particle []) = 
+    let ApplyCollision (particles : Particle []) =
         let last = particles.Length - 1
         for o in 0..last do
             let outer           = particles.[o]
@@ -122,16 +122,16 @@ module Gravity =
             for p in particles -> RenderParticle(p.Mass, p.Radius, p.Current, p.Velocity)
         |]
 
-    let Cleanup (particles : Particle []) = 
+    let Cleanup (particles : Particle []) =
         particles
-        |> ApplyCollision  
+        |> ApplyCollision
         |> RemoveMassless
 
     let TimeStep (timeStep : float32) (particles : Particle []) =
         let particles = particles
-                        |> ApplyGravity    timeStep 
-                        |> ApplyInertia    timeStep 
-                        |> ApplyCollision  
+                        |> ApplyGravity    timeStep
+                        |> ApplyInertia    timeStep
+                        |> ApplyCollision
                         |> RemoveMassless
         particles, ToRenderParticles particles
 

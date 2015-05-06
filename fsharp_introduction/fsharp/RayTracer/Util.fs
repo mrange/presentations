@@ -27,7 +27,7 @@ module Util =
     let inline degree2rad d = pi * d / 180.
     let inline rad2degree r = r * 180. / pi
 
-    let inline clamp x min max = 
+    let inline clamp x min max =
         if x < min then min
         elif x > max then max
         else x
@@ -35,10 +35,10 @@ module Util =
     let inline norm x = clamp x -1. 1.
     let inline unorm x = clamp x 0. 1.
 
-    let dispatch (d : Dispatcher) (a : unit -> unit) = 
+    let dispatch (d : Dispatcher) (a : unit -> unit) =
         let a' = Action a
         ignore <| d.BeginInvoke (DispatcherPriority.ApplicationIdle, a')
-        
+
     let inline asByte d = byte ((unorm d) * 255.)
 
 

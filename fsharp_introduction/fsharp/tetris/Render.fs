@@ -15,8 +15,8 @@ open Events
 module Details =
 
   let switchToSTAThread : Async<unit> =
-    let callback (s, e, c) = 
-      let threadStart () = 
+    let callback (s, e, c) =
+      let threadStart () =
         try
           s ()
         with
@@ -34,7 +34,7 @@ let createRenderer () = MailboxProcessor.Start <| fun inbox ->
   let vt    = ref Empty
   let game  = ref (None : MailboxProcessor<GameEvent> option)
 
-  let renderProc (d : Device) (rt : RenderTarget) = 
+  let renderProc (d : Device) (rt : RenderTarget) =
     let width   = d.Width
     let height  = d.Height
 
@@ -82,15 +82,16 @@ let createRenderer () = MailboxProcessor.Start <| fun inbox ->
 
     renderTree ctx !vt
 
-  let window = 
+  let window =
     async {
       do! switchToSTAThread
-      let onKeyUp i = 
+      let onKeyUp i =
         match !game, i with
-        | Some g, 37 -> g.Post KeyLeft
-        | Some g, 38 -> g.Post KeyUp
-        | Some g, 39 -> g.Post KeyRight
-        | Some g, 40 -> g.Post KeyDown
+        | Some g, 32 -> g.Post BlockDrop
+        | Some g, 37 -> g.Post BlockLeft
+        | Some g, 38 -> g.Post BlockRotate
+        | Some g, 39 -> g.Post BlockRight
+        | Some g, 40 -> g.Post BlockDown
         | _     , _  -> ()
 
       Window.Show "Tet3is" 1600 1200 onKeyUp renderProc

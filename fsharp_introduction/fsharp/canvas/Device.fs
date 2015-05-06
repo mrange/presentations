@@ -26,7 +26,7 @@ type TextFormatDescriptor =
     | SimpleTextFormat of string * float32
 
 
-type Device (form : Windows.RenderForm) = 
+type Device (form : Windows.RenderForm) =
 
     let getDeviceAndSwapChain (form : Windows.RenderForm) =
         let width               = form.ClientSize.Width
@@ -49,7 +49,7 @@ type Device (form : Windows.RenderForm) =
         let device              = ref DefaultOf<Direct3D11.Device>
         let swapChain           = ref DefaultOf<DXGI.SwapChain>
 
-        let featureLevels       = 
+        let featureLevels       =
             [|
                 Direct3D.FeatureLevel.Level_11_0
                 Direct3D.FeatureLevel.Level_10_1
@@ -60,10 +60,10 @@ type Device (form : Windows.RenderForm) =
             |]
 
         Direct3D11.Device.CreateWithSwapChain (
-            Direct3D.DriverType.Hardware                , 
-            Direct3D11.DeviceCreationFlags.BgraSupport  , 
-            featureLevels                               , 
-            desc                                        , 
+            Direct3D.DriverType.Hardware                ,
+            Direct3D11.DeviceCreationFlags.BgraSupport  ,
+            featureLevels                               ,
+            desc                                        ,
             device                                      , swapChain
             )
 
@@ -82,15 +82,15 @@ type Device (form : Windows.RenderForm) =
     let backBuffer          = Direct3D11.Texture2D.FromSwapChain<Direct3D11.Texture2D> (swapChain, 0)
     let surface             = backBuffer.QueryInterface<SharpDX.DXGI.Surface> ();
     let d2dRenderTarget     = new Direct2D1.RenderTarget (
-                                d2dFactory                          , 
-                                surface                             , 
+                                d2dFactory                          ,
+                                surface                             ,
                                 Direct2D1.RenderTargetProperties (
                                     Direct2D1.PixelFormat (
-                                        DXGI.Format.Unknown         , 
+                                        DXGI.Format.Unknown         ,
                                         Direct2D1.AlphaMode.Premultiplied
                                         )
                                     )
-                              
+
                                 )
 
     let brushes             = Dictionary<BrushDescriptor, Direct2D1.Brush> ()

@@ -5,8 +5,8 @@ open System.Threading
 open Events
 
 [<EntryPoint>]
-let main argv = 
-  
+let main argv =
+
   use renderer  = Render.createRenderer ()
   use game      = Game.createGame renderer
 

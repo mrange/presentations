@@ -11,7 +11,7 @@
 // ----------------------------------------------------------------------------------------------
 
 open System
-open System.Diagnostics                
+open System.Diagnostics
 
 open Canvas
 
@@ -28,7 +28,7 @@ module StateMonad =
         let returnFrom  (t : State<'T,'S>)  : State<'T,'S>  = t
         let zero        ()                  : State<unit,'S>= returnValue ()
 
-        let delay (ft : unit -> State<'T,'S>) : State<'T,'S> = 
+        let delay (ft : unit -> State<'T,'S>) : State<'T,'S> =
             fun s ->
                 let t = ft ()
                 t s
@@ -59,7 +59,7 @@ module StateMonad =
 
         let inline pushFrame<'S when 'S : (member PushFrame : unit -> unit)> s: unit =
             (^S : (member PushFrame : unit -> unit) s)
-            
+
         let inline popFrame<'S when 'S : (member PopFrame : unit -> unit)> s: unit =
             (^S : (member PopFrame : unit -> unit) s)
 
@@ -106,11 +106,11 @@ module Sorting =
             Values  : 'T []
         }
 
-        static member New b e (vs : 'T []) = 
-            { 
+        static member New b e (vs : 'T []) =
+            {
                 Begin   = clamp b 0 vs.Length
                 End     = clamp e b vs.Length
-                Values  = vs 
+                Values  = vs
             }
 
         member x.IsEmpty    = x.Length = 0
@@ -138,9 +138,9 @@ module Sorting =
     let subRange (b : int) (e : int) (r : InplaceRange<'V>) : InplaceRange<'V> =
         InplaceRange<_>.New b e r.Values
 
-    type ArrayAction = 
+    type ArrayAction =
         | PushArray         of Array
-        | PopArray      
+        | PopArray
         | PushFrame
         | PopFrame
         | SwapValues        of int*int
@@ -162,7 +162,7 @@ module Sorting =
 
         member x.PopFrame () = x.Raise PopFrame
 
-        member x.Raise (aa : ArrayAction) = 
+        member x.Raise (aa : ArrayAction) =
             let (Witness f) = x.Witness
             f aa
 
@@ -241,25 +241,25 @@ module Sorting =
             let lr = subRange r.Begin   p       r
             let rr = subRange (p + 1)   r.End   r
             (lr,rr),s
-    
 
-    let run (random : Random) (witness : Witness<ArrayAction>) (s : Sorter<'T>) : 'T = 
+
+    let run (random : Random) (witness : Witness<ArrayAction>) (s : Sorter<'T>) : 'T =
         let ss = SorterState.New random witness
         let r,_ = s ss
         r
 
-    let inplaceSorter (impl : InplaceRange<'V> -> Sorter<unit>) (vs : 'V []) : Sorter<'V []> = 
+    let inplaceSorter (impl : InplaceRange<'V> -> Sorter<unit>) (vs : 'V []) : Sorter<'V []> =
         state {
-            let r = vs |> Array.copy |> rangeFromArray 
+            let r = vs |> Array.copy |> rangeFromArray
             do! raise <| PushArray vs
             do! impl r
             do! raise PopArray
             return r.Values
         }
 
-    let sorter (impl : 'V [] -> InplaceRange<'V> -> Sorter<unit>) (vs : 'V []) : Sorter<'V []> = 
+    let sorter (impl : 'V [] -> InplaceRange<'V> -> Sorter<unit>) (vs : 'V []) : Sorter<'V []> =
         state {
-            let r = vs |> rangeFromArray 
+            let r = vs |> rangeFromArray
             let a = Array.zeroCreate vs.Length
             do! raise <| PushArray vs
             do! impl a r
@@ -292,7 +292,7 @@ module Sorting =
                         let! _,p    = pickPivot !re r
 
                         while b < !re do
-                        
+
                             let c = !re - 1
                             let! result = compareToPivot (fun v -> v > p) c r
                             if result then
@@ -311,7 +311,7 @@ module Sorting =
                     match range with
                     | None ->
                         return ()
-                    | Some (b, e) when e - b < cutoff -> 
+                    | Some (b, e) when e - b < cutoff ->
                         return! inner r
                     | Some (b,e) ->
                         let rb   = ref b
@@ -390,7 +390,7 @@ module Sorting =
                     let rf = ref b
                     let rs = ref m
                     let rc = ref b
-    
+
                     while !rf < m && !rs < e do
                         let f = !rf
                         let s = !rs
@@ -446,7 +446,7 @@ type VisualState =
         EndIndex    : int option
     }
 
-    static member Empty = 
+    static member Empty =
         {
             Values      = [||]
             MaxValue    = 0
@@ -475,18 +475,18 @@ let animateArrayAction (name : string) (aas : ArrayAction []) =
 
             let next =
                 match !state, aa with
-                | s         , PushArray a       -> 
+                | s         , PushArray a       ->
                     let vs  = a :?> int[]
                     let max = vs |> Array.max   // TODO: Handle empty
                     { VisualState.Empty with Values = vs; MaxValue = max }::s
-                | _::rest   , PopArray          -> rest                     
+                | _::rest   , PopArray          -> rest
                 | s::rest   , PushFrame         -> s::s::rest
                 | _::rest   , PopFrame          -> rest
                 | s::rest   , SwapValues (f,t)  ->
                     let tmp = s.Values.[t]
                     s.Values.[t] <- s.Values.[f]
                     s.Values.[f] <- tmp
-                    let ns = 
+                    let ns =
                         match s.PivotIndex with
                         | Some p when p = t -> { s with PivotIndex = Some f }
                         | Some p when p = f -> { s with PivotIndex = Some t }
@@ -532,7 +532,7 @@ let animateArrayAction (name : string) (aas : ArrayAction []) =
                 let y = rect.Bottom
                 v2 x y
 
-            let makeRect i = 
+            let makeRect i =
                 let v = s.Values.[i]
                 let x = rect.X + (float32 i) * step
                 let y = rect.Bottom
@@ -555,7 +555,7 @@ let animateArrayAction (name : string) (aas : ArrayAction []) =
                 renderTarget.DrawRectangle (r, valueStrokeBrush, 2.0F)
 
             match s.PivotIndex with
-            | Some i -> 
+            | Some i ->
                 let r       = makeRect i
                 renderTarget.FillRectangle (r, pivotFillBrush)
             | _ -> ()
@@ -575,7 +575,7 @@ let animateSorter (random : Random) (vs : 'V []) (name : string) (sorter : 'V []
 
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     let random      = Random(19740531)
 
     let vs = [| for x in 0..100 -> random.Next (300) |]

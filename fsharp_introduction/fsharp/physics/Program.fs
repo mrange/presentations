@@ -17,7 +17,7 @@ open System
 open Physics
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
 
     let random = Random 19740531
 
@@ -36,5 +36,5 @@ let main argv =
         drect   dx  dy  rot 20.F    20.F
 
     PhysicsWindow.Show world
-        
+
     0

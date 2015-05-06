@@ -37,12 +37,12 @@ module internal Utils =
 
     type ActionDisposable(a : unit -> unit) =
         interface IDisposable with
-            member x.Dispose () = 
+            member x.Dispose () =
                 try
                     a ()
                 with
                 | e -> () // TODO: Trace
-                
+
 
     let OnExit (a : unit -> unit) : IDisposable = upcast new ActionDisposable (a)
 

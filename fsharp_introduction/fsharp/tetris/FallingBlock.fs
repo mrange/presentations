@@ -16,7 +16,7 @@ module Details =
       | true  , true  , _     -> true
       | true  , false , Unset -> false
       | true  , false , _     -> true
-    
+
     foldBits block orientation false hitTest
 
   let mutate (previousBlock : FallingBlock) (lines : Lines) (newFallingBlock : FallingBlock) : FallingBlock =
@@ -28,7 +28,7 @@ module Details =
 open Details
 
 let isColliding (fallingBlock : FallingBlock) (lines : Lines) : bool =
-  collisionTest fallingBlock lines 
+  collisionTest fallingBlock lines
 
 let rotate (FallingBlock (block, pos, orientation) as previousBlock) (lines : Lines) : FallingBlock =
   let newFallingBlock = FallingBlock (block, pos, rotate block orientation)
@@ -40,10 +40,10 @@ let move (FallingBlock (block, pos, orientation) as previousBlock) (lines : Line
 
   mutate previousBlock lines newFallingBlock
 
-let mergeWithLines (FallingBlock (block, pos, orientation)) lines : Lines = 
+let mergeWithLines (FallingBlock (block, pos, orientation)) lines : Lines =
   let newLines = copyLines lines
 
-  let merger () bit bitPos = 
+  let merger () bit bitPos =
     let p = bitPos + pos
     match bit with
     | true -> mutates_SetCell newLines p Set

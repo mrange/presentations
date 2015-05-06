@@ -19,12 +19,12 @@ open System.Collections.Generic
 
 open SharpDX
 
-module Window = 
+module Window =
 
-    let Show 
-      (title      : string                                  ) 
-      (width      : int                                     ) 
-      (height     : int                                     ) 
+    let Show
+      (title      : string                                  )
+      (width      : int                                     )
+      (height     : int                                     )
       (onKeyUp    : int -> unit                             )
       (onRender   : Device -> Direct2D1.RenderTarget -> unit) =
         use form                = new Windows.RenderForm (title)
@@ -47,9 +47,9 @@ module Window =
 
         use onExitRemoveHandler = OnExit <| fun () -> form.Resize.RemoveHandler resizer
 
-        let render () = 
+        let render () =
             let d = !device
-                                
+
             d.Draw <| fun d2dRenderTarget -> onRender d d2dRenderTarget
 
         Windows.RenderLoop.Run (form, render)

@@ -51,20 +51,20 @@ type IntBoundingBox =
   // + One as the edges are closed
   member x.Size = x.BottomRight - x.TopLeft + IntVector.One
 
-  member x.Include (pos : IntVector) = 
+  member x.Include (pos : IntVector) =
     let min = x.TopLeft.Min pos
     let max = x.BottomRight.Max pos
 
     IntBoundingBox.UnsafeNew min max
 
-  member x.Contains (pos : IntVector) = 
+  member x.Contains (pos : IntVector) =
     let bb = x.Include pos
 
     x.TopLeft = bb.TopLeft && x.BottomRight = bb.BottomRight
 
   override x.ToString () = sprintf "{%s,%s}" (x.TopLeft.ToString ()) (x.BottomRight.ToString ())
 
-  static member private UnsafeNew (min : IntVector) (max : IntVector) : IntBoundingBox = 
+  static member private UnsafeNew (min : IntVector) (max : IntVector) : IntBoundingBox =
     {
       TopLeft     = min
       BottomRight = max

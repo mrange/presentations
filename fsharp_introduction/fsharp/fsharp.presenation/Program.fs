@@ -1,6 +1,6 @@
 ﻿
 [<EntryPoint>]
-let main argv = 
+let main argv =
     // 1. Hello world
 
     // Input:

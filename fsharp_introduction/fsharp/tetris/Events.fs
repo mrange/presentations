@@ -8,8 +8,9 @@ type RenderEvent =
 
 and GameEvent =
   | Tick
-  | KeyDown
-  | KeyUp
-  | KeyLeft
-  | KeyRight
+  | BlockRotate
+  | BlockDrop
+  | BlockDown
+  | BlockLeft
+  | BlockRight
 

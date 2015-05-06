@@ -14,9 +14,9 @@ namespace TurtlePower
 
 open Turtle
 
-module SimpleBox = 
+module SimpleBox =
 
-    let Generate v time = 
+    let Generate v time =
         turtle {
             do! Forward v
             do! Forward v
@@ -28,9 +28,9 @@ module SimpleBox =
             do! Forward v
         }
 
-module Box = 
+module Box =
 
-    let Generate v time = 
+    let Generate v time =
         turtle {
             do! Forward v
             do! Forward v
@@ -38,10 +38,10 @@ module Box =
                 do! Turn 90.F
                 do! Forward v
         }
-        
-module RecursiveBox = 
 
-    let Generate v time = 
+module RecursiveBox =
+
+    let Generate v time =
         turtle {
 //            let d = v + 50.0F * (sin <| 20.F * Deg2Rad * time)
             let d = v
@@ -54,9 +54,9 @@ module RecursiveBox =
         }
 
 
-module SimpleTreeFractal = 
+module SimpleTreeFractal =
 
-    let rec Generate n v time = 
+    let rec Generate n v time =
         turtle {
             if n <= 0 then
                 return ()
@@ -79,19 +79,19 @@ module SimpleTreeFractal =
                 do! Forward -v
         }
 
-module TreeFractal = 
+module TreeFractal =
 
-    let rec GenerateBranch n v time a = 
+    let rec GenerateBranch n v time a =
         turtle {
             do! Turn a
             do! Generate (n - 1) v time
         }
-    and Generate n v time = 
+    and Generate n v time =
         turtle {
             if n <= 0 then
                 return ()
             else
-                let c = 
+                let c =
                     match n with
                     | _ when n < 3  -> Lime
                     | _ when n < 6  -> LimeGreen
@@ -108,12 +108,12 @@ module TreeFractal =
                 do! GenerateBranch n (v * 0.75F) time -turn
         }
 
-module WavingTreeFractal = 
+module WavingTreeFractal =
 
     let LeftScaling     = 1.F / sqrt 2.F
     let RightScaling    = 1.1F * LeftScaling
-    
-    let GenerateFlower v = 
+
+    let GenerateFlower v =
         turtle {
             do! Color MediumVioletRed
             do! Forward v
@@ -127,18 +127,18 @@ module WavingTreeFractal =
             do! Forward (v / 2.F)
         }
 
-    let rec GenerateBranch n v time a = 
+    let rec GenerateBranch n v time a =
         turtle {
             do! Turn a
             do! Generate (n - 1) v time
         }
-    and Generate n v time = 
+    and Generate n v time =
         turtle {
             if n <= 0 then
                 do! GenerateFlower v
             else
                 let turn = 20.F
-                let c = 
+                let c =
                     match n with
                     | _ when n < 3  -> Lime
                     | _ when n < 6  -> LimeGreen
@@ -157,8 +157,8 @@ module OptimizedTreeFractal =
 
     let LeftScaling     = 1.F / sqrt 2.F
     let RightScaling    = 1.1F * LeftScaling
-    
-    let GenerateFlower v = 
+
+    let GenerateFlower v =
         Color MediumVioletRed
         >>+ Forward v
         >>+ Turn 90.F
@@ -170,16 +170,16 @@ module OptimizedTreeFractal =
         >>+ Turn -120.F
         >>+ Forward (v / 2.F)
 
-    let rec GenerateBranch n v time a = 
+    let rec GenerateBranch n v time a =
         Turn a
         >>+ Generate (n - 1) v time
 
-    and Generate n v time = 
+    and Generate n v time =
         if n <= 0 then
             GenerateFlower v
         else
             let turn = min 20.F <| 1.F + time
-            let c = 
+            let c =
                 match n with
                 | _ when n < 3  -> Lime
                 | _ when n < 6  -> LimeGreen
@@ -198,17 +198,17 @@ module OtherTreeFractal =
     let LeftScaling     = 1.F / sqrt 2.F
     let RightScaling    = 1.1F * LeftScaling
 
-    let rec GenerateBranch n v time a = 
+    let rec GenerateBranch n v time a =
         turtle {
             do! Turn a
             do! Generate (n - 1) v time
         }
-    and Generate n v time = 
+    and Generate n v time =
         turtle {
             if n <= 0 then
                 return ()
             else
-                let c = 
+                let c =
                     match n with
                     | _ when n < 3  -> Lime
                     | _ when n < 6  -> LimeGreen

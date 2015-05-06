@@ -29,7 +29,7 @@ module CanvasAutoOpen =
 
     let inline v2 x y  = Vector2 (x,y)
 
-    let bounds (v1 : Vector2) (v2 : Vector2) = 
+    let bounds (v1 : Vector2) (v2 : Vector2) =
         let min = Vector2.Min (v1, v2)
         let max = Vector2.Max (v1, v2)
         rectf min.X min.Y (max.X - min.X) (max.Y - min.Y)

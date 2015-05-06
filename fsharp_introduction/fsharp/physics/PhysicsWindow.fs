@@ -19,9 +19,9 @@ open System.Collections.Generic
 
 open SharpDX
 
-module PhysicsWindow = 
+module PhysicsWindow =
 
-    let Show (world : FarseerPhysics.Dynamics.World) = 
+    let Show (world : FarseerPhysics.Dynamics.World) =
         let sw = Stopwatch ()
 
         use form                = new Windows.RenderForm ("Physics")
@@ -49,18 +49,18 @@ module PhysicsWindow =
 
         sw.Start ()
 
-        Windows.RenderLoop.Run (form, fun () -> 
+        Windows.RenderLoop.Run (form, fun () ->
             let elapsed = sw.ElapsedMilliseconds
             sw.Restart ()
 
             world.Step (float32 elapsed / 1000.F)
 
             let d = !device
-                                
+
             let r = Physics.Resources.New d.BlackBrush d.LimeGreenBrush d.MediumVioletRedBrush
 
-            d.Draw <| fun d2dRenderTarget -> 
-                
+            d.Draw <| fun d2dRenderTarget ->
+
                 d2dRenderTarget.Clear (Nullable<_> (Color.White.ToColor4 ()))
 
                 let bl = world.BodyList
@@ -68,14 +68,14 @@ module PhysicsWindow =
                 for i in 0..(bc - 1) do
                     let b = bl.[i]
                     let br= b.UserData :?> Physics.BodyRenderer
-                    
-                    br (r, d2dRenderTarget, b) 
+
+                    br (r, d2dRenderTarget, b)
 
 (*
-                let transform = 
-                    Matrix3x2.Identity 
+                let transform =
+                    Matrix3x2.Identity
                     <*> Matrix3x2.Rotation (Deg2Rad * 180.F)
-                    <*> Matrix3x2.Translation (d.Width/2.F, d.Height - 20.F) 
+                    <*> Matrix3x2.Translation (d.Width/2.F, d.Height - 20.F)
                 d2dRenderTarget.Transform <- transform
 *)
 

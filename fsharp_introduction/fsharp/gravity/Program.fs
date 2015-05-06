@@ -17,7 +17,7 @@ open Gravity
 open System
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
 
     let random  = Random (19740531)
 
@@ -51,7 +51,7 @@ let main argv =
                         let p   = CreateParticle sun m r a f
                         yield p
                 |]
-            |]    
+            |]
 
     Window.Show particles
     0

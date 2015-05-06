@@ -15,7 +15,7 @@ namespace RayTracer
 open System.Globalization
 open System.Text
 
-type Vector2 = 
+type Vector2 =
     {
         X   : float
         Y   : float
@@ -44,7 +44,7 @@ type Vector2 =
 
     member x.Reflect (n : Vector2)  = x - 2.* n * x * n
 
-    override x.ToString () = 
+    override x.ToString () =
         let sb = new StringBuilder()
         sb
             .Append('(')
@@ -54,7 +54,7 @@ type Vector2 =
             .Append(')')
             .ToString()
 
-type Vector3 = 
+type Vector3 =
     {
         X   : float
         Y   : float
@@ -84,14 +84,14 @@ type Vector3 =
 
     member x.Reflect (n : Vector3)  = x - 2.* n * x * n
 
-    member x.ComputeNormal () = 
+    member x.ComputeNormal () =
         if x.X <> 0. then Vector3.New (-(x.Y + x.Z) / x.X) 1. 1.
         elif x.Y <> 0. then Vector3.New 1. (-(x.X + x.Z) / x.Y) 1.
-        elif x.Z <> 0. then Vector3.New 1. 1. (-(x.Y + x.X) / x.Z) 
+        elif x.Z <> 0. then Vector3.New 1. 1. (-(x.Y + x.X) / x.Z)
         else Vector3.One
-        
 
-    override x.ToString () = 
+
+    override x.ToString () =
         let sb = new StringBuilder()
         sb
             .Append('(')
