@@ -27,6 +27,9 @@ module Details =
 
 open Details
 
+let isColliding (fallingBlock : FallingBlock) (lines : Lines) : bool =
+  collisionTest fallingBlock lines 
+
 let rotate (FallingBlock (block, pos, orientation) as previousBlock) (lines : Lines) : FallingBlock =
   let newFallingBlock = FallingBlock (block, pos, rotate block orientation)
 

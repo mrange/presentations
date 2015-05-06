@@ -53,10 +53,13 @@ module Details =
           let full, newLines    = removeFullLines <| mergeWithLines fallingBlock lines
           let newFallingBlock   = createFallingBlock lines nextBlock
           let newNextBlock      = createBlock rnd
-          Playing (Score (s + full*full), newLines, newFallingBlock, newNextBlock)
+          
+          if isColliding newFallingBlock newLines then
+            GameOver score
+          else
+            Playing (Score (s + full*full), newLines, newFallingBlock, newNextBlock)
         else
           newBlock moved
-      | _ -> g
 
       
 
@@ -147,8 +150,7 @@ module Details =
   let createVisualTree (g : Game) : VisualTree =
     match g with 
     | GameOver (Score score) -> 
-      // TODO:
-      Empty
+      renderScore score
     | Playing (Score score, lines, fallingBlock, nextBlock) ->
       Group
         [|
