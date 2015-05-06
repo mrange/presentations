@@ -1,4 +1,16 @@
-﻿module Game
+﻿// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A
+// copy of the license can be found in the License.html file at the root of this distribution.
+// If you cannot locate the  Microsoft Public License, please send an email to
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+
+module Game
 
 open System
 
@@ -22,7 +34,7 @@ type Game =
 
 module Details =
 
-  let createBlock (rnd : Random) =
+  let createBlock (rnd : Random) = 
     match rnd.Next 7 with
     | 0 -> O
     | 1 -> I
@@ -35,11 +47,11 @@ module Details =
 
   let createFallingBlock (Lines (bb, _)) bl = FallingBlock (bl, v (bb.Size.X / 2) 0, Orientation 0)
 
-  let mergeBlock rnd (Score score) fallingBlock lines nextBlock =
+  let mergeBlock rnd (Score score) fallingBlock lines nextBlock = 
     let full, newLines    = removeFullLines <| mergeWithLines fallingBlock lines
     let newFallingBlock   = createFallingBlock lines nextBlock
     let newNextBlock      = createBlock rnd
-
+          
     if isColliding newFallingBlock newLines then
       GameOver (Score score)
     else
@@ -66,14 +78,14 @@ module Details =
         let moved = drop fallingBlock
         mergeBlock rnd score moved lines nextBlock
       | BlockDown
-      | Tick      ->
+      | Tick      -> 
         let moved = move fallingBlock lines <| v 0 1
         if moved = fallingBlock then
           mergeBlock rnd score moved lines nextBlock
         else
           newBlock moved
 
-
+      
 
   module Brushes =
     let inline solidBrush c = BrushDescriptor.SolidBrush c
@@ -88,9 +100,9 @@ module Details =
   let blockSize = sizef 25.F 25.F
 
   let renderCell (x : int) (y : int) : VisualTree =
-    rectangle
-      (constant Brushes.transparent)
-      (constant Brushes.red)
+    rectangle 
+      (constant Brushes.transparent) 
+      (constant Brushes.red) 
       (constant (rectf (blockSize.Width * float32 x + 1.F) (blockSize.Height * float32 y + 1.F) (blockSize.Width - 2.F) (blockSize.Height - 2.F)))
       (constant 0.F)
 
@@ -100,15 +112,15 @@ module Details =
     Group <| vts.ToArray ()
 
   let border rect : VisualTree =
-    rectangle
-      (constant Brushes.white)
-      (constant Brushes.transparent)
+    rectangle 
+      (constant Brushes.white) 
+      (constant Brushes.transparent) 
       (constant rect)
       (constant 1.F)
 
   let expandBorder = expand 4.F 4.F
 
-  let rectOfLines (Lines (bb, _)) : RectangleF =
+  let rectOfLines (Lines (bb, _)) : RectangleF = 
     let sz = bb.Size
     expandBorder <| rectf 0.F 0.F (blockSize.Width * float32 sz.X) (blockSize.Height * float32 sz.Y)
 
@@ -160,8 +172,8 @@ module Details =
     Text (sprintf "Score: %d" score, textDescriptor, constant Brushes.white, constant (rectf 0.F 0.F 200.F 40.F))
 
   let createVisualTree (g : Game) : VisualTree =
-    match g with
-    | GameOver (Score score) ->
+    match g with 
+    | GameOver (Score score) -> 
       renderScore score
     | Playing (Score score, lines, fallingBlock, nextBlock) ->
       Group
@@ -180,7 +192,7 @@ let createGame (renderer : MailboxProcessor<RenderEvent>) = MailboxProcessor.Sta
       let rows  = 20
       let rnd   = Random 19740531
 
-      let lines                 = createLines cols rows
+      let lines                 = createLines cols rows      
       let currentBlock          = createFallingBlock lines <| createBlock rnd
       let nextBlock             = createBlock rnd
 
