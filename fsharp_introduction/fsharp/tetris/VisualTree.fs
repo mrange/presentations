@@ -6,6 +6,7 @@ open Animation
 
 type VisualTree =
   | Empty
+  | Generator of (RenderContext -> VisualTree)
   | Group     of VisualTree []
   | Transform of AnimatedTransform*VisualTree
   | Text      of string*TextFormatDescriptor*AnimatedBrush*AnimatedRectangleF

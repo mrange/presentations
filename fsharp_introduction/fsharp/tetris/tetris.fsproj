@@ -65,6 +65,7 @@
     <Compile Include="FallingBlock.fs" />
     <Compile Include="Animation.fs" />
     <Compile Include="VisualTree.fs" />
+    <Compile Include="Events.fs" />
     <Compile Include="Render.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="Program.fs" />

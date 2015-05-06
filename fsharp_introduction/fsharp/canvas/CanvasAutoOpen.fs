@@ -18,7 +18,14 @@ open SharpDX
 [<AutoOpen>]
 module CanvasAutoOpen =
 
+    let inline sizef w h = Size2F (w,h)
+
     let inline rectf x y w h = RectangleF (x,y,w,h)
+
+    let inline expand (w : float32) (h : float32) (rect : RectangleF) : RectangleF =
+      let hw = w / 2.0F
+      let hh = h / 2.0F
+      RectangleF (rect.X - hw, rect.Y - hh, rect.Width + w, rect.Height + h)
 
     let inline v2 x y  = Vector2 (x,y)
 

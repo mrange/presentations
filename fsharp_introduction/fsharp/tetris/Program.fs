@@ -1,26 +1,20 @@
 ﻿
-
-
-
 open System
+open System.Threading
+
+open Events
 
 [<EntryPoint>]
 let main argv = 
   
-  use renderer = Render.createRenderer ()
-  use game = Game.createGame renderer
+  use renderer  = Render.createRenderer ()
+  use game      = Game.createGame renderer
 
-  let rec main () =
-    let key = Console.ReadKey ()
-    match key.Key with
-    | ConsoleKey.UpArrow    -> game.Post <| Game.KeyUp
-    | ConsoleKey.DownArrow  -> game.Post <| Game.KeyDown
-    | ConsoleKey.LeftArrow  -> game.Post <| Game.KeyLeft
-    | ConsoleKey.RightArrow -> game.Post <| Game.KeyRight
-    | _                     -> ()
+  let callback  = TimerCallback (fun x -> game.Post Tick)
+  use timer     = new Timer(callback, null, TimeSpan.Zero, TimeSpan.FromSeconds 0.5)
 
-    main ()
+  renderer.Post <| Game game
 
-  main ()
+  ignore <| Console.ReadKey ()
 
   0

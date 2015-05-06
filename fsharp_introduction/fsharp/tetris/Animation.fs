@@ -7,9 +7,14 @@ open Canvas
 type RenderContext =
   {
     GameTime  : float32
+    Size      : Size2F
   }
 
-  static member New () = { GameTime = float32 clock.Elapsed.TotalSeconds }
+  static member New sz = 
+    { 
+      GameTime  = gameTime ()
+      Size      = sz 
+    }
 
 type AnimatedTransform  = (RenderContext -> Matrix3x2)
 type AnimatedVector2    = (RenderContext -> Vector2)

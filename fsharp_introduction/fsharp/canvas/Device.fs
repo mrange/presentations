@@ -19,6 +19,7 @@ open System.Collections.Generic
 open SharpDX
 
 type BrushDescriptor =
+    | Transparent
     | SolidBrush of Color
 
 type TextFormatDescriptor =
@@ -96,7 +97,8 @@ type Device (form : Windows.RenderForm) =
 
     let createBrush (bd : BrushDescriptor) : Direct2D1.Brush =
         match bd with
-        | SolidBrush c -> upcast new Direct2D1.SolidColorBrush (d2dRenderTarget, c.ToColor4 ())
+        | Transparent   -> null
+        | SolidBrush c  -> upcast new Direct2D1.SolidColorBrush (d2dRenderTarget, c.ToColor4 ())
 
     let textFormats         = Dictionary<TextFormatDescriptor, DirectWrite.TextFormat> ()
 
@@ -113,6 +115,7 @@ type Device (form : Windows.RenderForm) =
 
     member x.Width                  = width
     member x.Height                 = height
+    member x.ClientSize             = sizef (float32 width) (float32 height)
 
     member x.Draw (a : Direct2D1.RenderTarget->unit) =
         d2dRenderTarget.BeginDraw ()

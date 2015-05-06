@@ -10,10 +10,12 @@ module Details =
   let collisionTest (FallingBlock (block, pos, orientation)) (lines : Lines) : bool =
     let hitTest result bit bitPos =
       let p = bitPos + pos
-      match result, getCell lines p with
-      | true  , _     -> true
-      | false , Unset -> false
-      | false , _     -> true
+      let c = getCell lines p
+      match bit, result, c with
+      | false , _     , _     -> result
+      | true  , true  , _     -> true
+      | true  , false , Unset -> false
+      | true  , false , _     -> true
     
     foldBits block orientation false hitTest
 
@@ -34,3 +36,17 @@ let move (FallingBlock (block, pos, orientation) as previousBlock) (lines : Line
   let newFallingBlock = FallingBlock (block, pos + translate, orientation)
 
   mutate previousBlock lines newFallingBlock
+
+let mergeWithLines (FallingBlock (block, pos, orientation)) lines : Lines = 
+  let newLines = copyLines lines
+
+  let merger () bit bitPos = 
+    let p = bitPos + pos
+    match bit with
+    | true -> mutates_SetCell newLines p Set
+    | false -> ()
+    ()
+
+  foldBits block orientation () merger
+
+  newLines

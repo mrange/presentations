@@ -466,7 +466,7 @@ let animateArrayAction (name : string) (aas : ArrayAction []) =
     let width   = 1600.F
     let height  = 1200.F
 
-    Window.Show ("Interactive sort - " + name) (int width) (int height) <| fun dev renderTarget ->
+    Window.Show ("Interactive sort - " + name) (int width) (int height) ignore <| fun dev renderTarget ->
         renderTarget.Clear Color.Black
 
         let t = trickle ()

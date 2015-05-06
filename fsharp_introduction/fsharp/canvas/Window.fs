@@ -21,7 +21,12 @@ open SharpDX
 
 module Window = 
 
-    let Show (title : string) (width : int) (height : int) (onRender : Device -> Direct2D1.RenderTarget -> unit) =
+    let Show 
+      (title      : string                                  ) 
+      (width      : int                                     ) 
+      (height     : int                                     ) 
+      (onKeyUp    : int -> unit                             )
+      (onRender   : Device -> Direct2D1.RenderTarget -> unit) =
         use form                = new Windows.RenderForm (title)
 
         form.ClientSize         <- Drawing.Size (width,height)
@@ -35,8 +40,10 @@ module Window =
         use onExitDisposeDevice = OnExit disposeDevice
 
         let resizer             = EventHandler (fun o e -> recreateDevice ())
+        let keyUp               = Windows.Forms.KeyEventHandler (fun o e -> onKeyUp e.KeyValue)
 
         form.Resize.AddHandler resizer
+        form.KeyUp.AddHandler keyUp
 
         use onExitRemoveHandler = OnExit <| fun () -> form.Resize.RemoveHandler resizer
 
