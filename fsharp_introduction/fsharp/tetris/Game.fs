@@ -176,12 +176,17 @@ module Details =
     | GameOver (Score score) -> 
       renderScore score
     | Playing (Score score, lines, fallingBlock, nextBlock) ->
-      Group
-        [|
-          renderGameBoard fallingBlock lines
-          renderNextBlock nextBlock
-          renderScore score
-        |]
+      let t (ctx : RenderContext) = Matrix3x2.Translation (v2 (100.F + 100.F * (cos ctx.GameTime)) (100.F + 100.F * (sin ctx.GameTime)))
+      Transform 
+        (
+          t,
+          Group
+            [|
+              renderGameBoard fallingBlock lines
+              renderNextBlock nextBlock
+              renderScore score
+            |]
+        )
 
 
 open Details
