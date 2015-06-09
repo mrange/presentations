@@ -80,7 +80,15 @@ namespace AsyncAwaitSample
                 }
 
 
-                Console.WriteLine ("m_readingFiles should be 0, but is {0}", m_readingFiles);
+                if (m_readingFiles == 0)
+                {
+                  Console.WriteLine ("SUCCESS: No race condition detected");
+                }
+                else
+                {
+                  Console.WriteLine ("FAILED: Race condition detected, m_readingFiles should be 0, but is {0}", m_readingFiles);
+                }
+
                 Console.WriteLine ("TestCase2 done");
             }
 
