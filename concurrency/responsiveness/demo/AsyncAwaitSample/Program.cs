@@ -45,6 +45,7 @@ namespace AsyncAwaitSample
 
                 var text = readTask.Result;
 
+                Console.WriteLine (text);
                 Console.WriteLine ("TestCase1 done");
             }
 
