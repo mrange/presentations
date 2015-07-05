@@ -66,26 +66,9 @@ let pmany1 (p : Parser<'T>) : Parser<'T list> =
   pmany p
   >>= fun l -> if l.IsEmpty then pfail else preturn l
 
-let pint : Parser<int> =
-  pmany1 pdigit
-  |>> List.fold (fun s ch -> s * 10 + (int ch - int '0')) 0
-
-let pidentifier : Parser<string> =
-  pmany1 pletter
-  |>> (List.toArray >> System.String)
-
 let pskip ch : Parser<unit> =
   psatisfy (fun c -> ch = c)
   |>> fun _ -> ()
-
-let passignment : Parser<string*int> =
-  pidentifier
-  >>= fun id ->
-    pskip '='
-    >>= fun _ ->
-      pint
-      >>= fun i ->
-        preturn (id, i)
 
 let pdelay (ft : unit -> Parser<'T>) : Parser<'T> =
   fun (s,pos) ->
@@ -99,29 +82,51 @@ type ParserBuilder()=
 
 let parser = ParserBuilder()
 
-let passignment2 : Parser<string*int> =
+let pint : Parser<int> =
+  pmany1 pdigit
+  |>> List.fold (fun s ch -> s * 10 + (int ch - int '0')) 0
+
+let pidentifier : Parser<string> =
+  pmany1 pletter
+  |>> (List.toArray >> String)
+
+let passignment_ : Parser<string*int> =
+  pidentifier
+  >>= fun id ->
+    pskip '='
+    >>= fun _ ->
+      pint
+      >>= fun i ->
+        pskip ';'
+        >>= fun _ ->
+          preturn (id, i)
+
+let passignment : Parser<string*int> =
   parser {
     let! id = pidentifier
     do! pskip '='
     let! i = pint
+    do! pskip ';'
     return id, i
   }
 
+let passignments : Parser<(string*int) list> =
+  pmany passignment
 
 let parseAndPrint s (p : Parser<'T>)=
-  printfn "Input: %s" s
+  let prelude = "Input: "
+  printfn "%s%s" prelude s
   let ov, pos = p (s, 0)
+  let indicator = String(' ', pos + prelude.Length)
+  printfn "%s^" indicator
   match ov with
   | Some v ->
     printfn "Success: Parsed %d characters as: %A" pos v
   | _ ->
-    printfn "Failed: Parsed %d characters" pos
+    printfn "Failed: Parse failed at position: %d" pos
 
 [<EntryPoint>]
 let main argv =
-
-  let p = pint
-
-  parseAndPrint "avs" pidentifier
+  parseAndPrint "a=3;" passignments
 
   0
