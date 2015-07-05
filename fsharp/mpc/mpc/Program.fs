@@ -36,13 +36,13 @@ let pbind
   (t : Parser<'T>)
   (fu : 'T -> Parser<'U>) : Parser<'U> =
   fun (s,pos) ->
-    let ovt,vpos = t (s,pos)
+    let ovt,tpos = t (s,pos)
     match ovt with
     | Some vt ->
       let u = fu vt
-      u (s,vpos)
+      u (s,tpos)
     | _ ->
-      None, vpos
+      None, tpos
 
 let inline (>>=) t fu = pbind t fu
 
@@ -54,13 +54,13 @@ let inline (|>>) p m = pmap p m
 
 let pmany (p : Parser<'T>) : Parser<'T list> =
   fun (s,pos) ->
-    let rec impl r c =
+    let rec loop r c =
       let ov, n = p (s,c)
       match ov with
-      | Some v -> impl (v::r) n
+      | Some v -> loop (v::r) n
       | _ -> Some (List.rev r), c
 
-    impl [] pos
+    loop [] pos
 
 let pmany1 (p : Parser<'T>) : Parser<'T list> =
   pmany p
@@ -93,8 +93,7 @@ let pidentifier : Parser<string> =
 let passignment_ : Parser<string*int> =
   pidentifier
   >>= fun id ->
-    pskip '='
-    >>= fun _ ->
+    pskip '=' >>= fun _ ->
       pint
       >>= fun i ->
         pskip ';'
