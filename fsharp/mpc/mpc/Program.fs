@@ -11,38 +11,63 @@
 // ----------------------------------------------------------------------------------------------
 open System
 
-type Parser<'T> = string*int -> 'T option*int
+type ParserError =
+  | NoError
+  | Expected    of string
+  | Unexpected  of string
+  | Fork        of ParserError*ParserError
+  | Group       of ParserError list
 
-let psatisfy f : Parser<char> =
-  fun (s,pos) ->
-    if pos < s.Length && f s.[pos] then
-      Some s.[pos],pos + 1
+type Parser<'T> = string*int*int -> 'T option*ParserError*int
+
+let err pe pos epos = 
+  if pos = epos then 
+    pe 
+  else 
+    NoError
+let errjoin lpe rpe = 
+  match lpe, rpe with
+  | NoError , _       -> rpe
+  | _       , NoError -> lpe
+  | _       , _       -> Fork (lpe, rpe)
+
+module Errors =
+  let eos         = Unexpected "EOS"
+  let atLeastOnce = Expected "At least once"
+
+let psatisfy pe f : Parser<char> =
+  fun (s,pos,epos) ->
+    if pos >= s.Length then
+      None, err Errors.eos pos epos, pos
+    elif f s.[pos] then
+      Some s.[pos], NoError, pos + 1
     else
-      None,pos
+      None, err pe pos epos, pos
 
-let pchar   = psatisfy <| fun _ -> true
-let pdigit  = psatisfy Char.IsDigit
-let pletter = psatisfy Char.IsLetter
+let pchar   = psatisfy (Expected "char")    <| fun _ -> true
+let pdigit  = psatisfy (Expected "digit")   Char.IsDigit
+let pletter = psatisfy (Expected "letter")  Char.IsLetter
 
 let preturn (v : 'T) : Parser<'T> =
-  fun (s,pos) ->
-    Some v,pos
+  fun (s,pos,epos) ->
+    Some v, NoError, pos
 
-let pfail : Parser<'T> =
-  fun (s,pos) ->
-    None,pos
+let pfail pe : Parser<'T> =
+  fun (s,pos,epos) ->
+    None, err pe pos epos, pos
 
 let pbind
   (t : Parser<'T>)
   (fu : 'T -> Parser<'U>) : Parser<'U> =
-  fun (s,pos) ->
-    let ovt,tpos = t (s,pos)
+  fun (s,pos,epos) ->
+    let ovt,terr,tpos = t (s,pos,epos)
     match ovt with
     | Some vt ->
       let u = fu vt
-      u (s,tpos)
+      let ovu, uerr, upos = u (s,tpos,epos)
+      ovu, errjoin terr uerr , upos
     | _ ->
-      None, tpos
+      None, terr, tpos
 
 let inline (>>=) t fu = pbind t fu
 
@@ -52,28 +77,40 @@ let pmap (p : Parser<'T>) (m : 'T -> 'U) : Parser<'U> =
 
 let inline (|>>) p m = pmap p m
 
+let popt (p : Parser<'T>) : Parser<'T option> =
+  fun (s,pos, epos) ->
+    let ovp, perr, ppos = p (s,pos, epos)
+    match ovp with
+    | Some vp -> 
+      Some (Some vp), perr, ppos
+    | _ -> 
+      Some None, perr, pos
+
 let pmany (p : Parser<'T>) : Parser<'T list> =
-  fun (s,pos) ->
-    let rec loop r c =
-      let ov, n = p (s,c)
-      match ov with
-      | Some v -> loop (v::r) n
-      | _ -> Some (List.rev r), c
+  fun (s,pos,epos) ->
+    let rec loop r cpos =
+      let ovp, perr, ppos= p (s,cpos,epos)
+      match ovp with
+      | Some vp -> loop ((perr,vp)::r) ppos
+      | _ -> 
+        let errs, vs = r |> List.rev |> List.unzip
+        let group = Group (perr::errs)
+        Some vs, group, cpos
 
     loop [] pos
 
 let pmany1 (p : Parser<'T>) : Parser<'T list> =
   pmany p
-  >>= fun l -> if l.IsEmpty then pfail else preturn l
+  >>= fun l -> if l.IsEmpty then pfail Errors.atLeastOnce else preturn l
 
 let pskip ch : Parser<unit> =
-  psatisfy (fun c -> ch = c)
+  psatisfy (Expected <| sprintf "'%s'" (String(ch, 1))) (fun c -> ch = c)
   |>> fun _ -> ()
 
 let pdelay (ft : unit -> Parser<'T>) : Parser<'T> =
-  fun (s,pos) ->
+  fun (s,pos,epos) ->
     let t = ft ()
-    t (s,pos)
+    t (s,pos,epos)
 
 type ParserBuilder()=
   member x.Delay(ft)  = pdelay ft
@@ -93,7 +130,8 @@ let pidentifier : Parser<string> =
 let passignment_ : Parser<string*int> =
   pidentifier
   >>= fun id ->
-    pskip '=' >>= fun _ ->
+    pskip '='
+    >>= fun _ ->
       pint
       >>= fun i ->
         pskip ';'
@@ -115,17 +153,39 @@ let passignments : Parser<(string*int) list> =
 let parseAndPrint s (p : Parser<'T>)=
   let prelude = "Input: "
   printfn "%s%s" prelude s
-  let ov, pos = p (s, 0)
+  let ov, _, pos = p (s, 0, Int32.MaxValue)
   let indicator = String(' ', pos + prelude.Length)
   printfn "%s^" indicator
   match ov with
   | Some v ->
     printfn "Success: Parsed %d characters as: %A" pos v
   | _ ->
-    printfn "Failed: Parse failed at position: %d" pos
+
+    let es = ResizeArray<string> ()
+    let ues = ResizeArray<string> ()
+
+    let rec extractError = function 
+    | NoError       -> ()
+    | Expected e    -> es.Add e
+    | Unexpected ue -> ues.Add ue
+    | Fork (l,r)    -> 
+      extractError l
+      extractError r
+    | Group es ->
+      es |> List.iter extractError
+
+
+    let _, err, _ = p (s, 0, pos)
+
+    extractError err
+
+    let es  = es |> Seq.sort |> Seq.distinct |> Seq.toArray
+    let ues = ues |> Seq.sort |> Seq.distinct |> Seq.toArray
+
+    printfn "Failed: Parse failed at position: %d\nExpected: %A\nUnexpected: %A" pos es ues
 
 [<EntryPoint>]
 let main argv =
-  parseAndPrint "a=3;" passignments
+  parseAndPrint "a=" passignment
 
   0
