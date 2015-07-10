@@ -10,6 +10,7 @@
 // You must not remove this notice, or any other, from this software.
 // ----------------------------------------------------------------------------------------------
 open System
+open System.Text
 
 type ParserError =
   | NoError
@@ -33,12 +34,12 @@ let errjoin lpe rpe =
 
 module Errors =
   let eos         = Unexpected "EOS"
-  let atLeastOnce = Expected "At least once"
 
 let psatisfy pe f : Parser<char> =
+  let eos = Group [Errors.eos; pe]
   fun (s,pos,epos) ->
     if pos >= s.Length then
-      None, err Errors.eos pos epos, pos
+      None, err eos pos epos, pos
     elif f s.[pos] then
       Some s.[pos], NoError, pos + 1
     else
@@ -101,7 +102,7 @@ let pmany (p : Parser<'T>) : Parser<'T list> =
 
 let pmany1 (p : Parser<'T>) : Parser<'T list> =
   pmany p
-  >>= fun l -> if l.IsEmpty then pfail Errors.atLeastOnce else preturn l
+  >>= fun l -> if l.IsEmpty then pfail NoError else preturn l
 
 let pskip ch : Parser<unit> =
   psatisfy (Expected <| sprintf "'%s'" (String(ch, 1))) (fun c -> ch = c)
@@ -179,13 +180,48 @@ let parseAndPrint s (p : Parser<'T>)=
 
     extractError err
 
-    let es  = es |> Seq.sort |> Seq.distinct |> Seq.toArray
-    let ues = ues |> Seq.sort |> Seq.distinct |> Seq.toArray
+    let buildString (input : ResizeArray<string>) = 
+      let ss = input |> Seq.sort |> Seq.distinct |> Seq.toArray
 
-    printfn "Failed: Parse failed at position: %d\nExpected: %A\nUnexpected: %A" pos es ues
+      if ss.Length = 0 then
+        ""
+      else
+        let sb = StringBuilder ()
+        let e = ss.Length - 1
+
+        for i = 0 to e do
+          let s = ss.[i]
+          let prepend =
+            match i with
+            | 0 -> ""
+            | e -> " or "
+            |_ -> ", "
+
+          ignore <| sb.Append prepend
+          ignore <| sb.Append (ss.[i])
+
+        sb.ToString ()
+
+    let expected   = buildString es
+    let unexpected = buildString ues
+
+    printfn "Failed: Parse failed at position: %d" pos
+    if expected.Length > 0 then
+      printfn "Expected %s" expected
+    if unexpected.Length > 0 then
+      printfn "Unexpected %s" unexpected
 
 [<EntryPoint>]
 let main argv =
-  parseAndPrint "a=" passignment
+
+  let rec loop () =
+    let line = Console.ReadLine ()
+    if line.Length > 0 then
+      parseAndPrint line passignment
+      loop ()
+    else
+      ()
+
+  loop ()
 
   0
