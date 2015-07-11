@@ -75,7 +75,7 @@ module ParserModule =
   let pchar       = psatisfy (Expected "char")        <| fun _ -> true
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
   let pletter     = psatisfy (Expected "letter")      Char.IsLetter
-  let pwhitespace = psatisfy (Expected "whitespacew") Char.IsWhiteSpace
+  let pwhitespace = psatisfy (Expected "whitespace")  Char.IsWhiteSpace
 
   // Parser modifiers
   let pbind
@@ -224,18 +224,6 @@ let pint : Parser<int> =
 let pidentifier : Parser<string> =
   pmany1 pletter
   |>> (List.toArray >> String)
-
-// Parses an assignment: abc=343;
-let passignment_ : Parser<string*int> =
-  pidentifier
-  >>= fun id ->
-    pskip '='
-    >>= fun _ ->
-      pint
-      >>= fun i ->
-        pskip ';'
-        >>= fun _ ->
-          preturn (id, i)
 
 // Parses an assignment: abc=343;
 let passignment : Parser<string*int> =
