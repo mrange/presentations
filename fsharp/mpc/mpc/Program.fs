@@ -12,7 +12,7 @@
 open System
 open System.Text
 
-module Parser =
+module ParserModule =
   type Error =
     | NoError
     | Expected    of string
@@ -64,9 +64,10 @@ module Parser =
       else
         None, err pe pos epos, pos
 
-  let pchar   = psatisfy (Expected "char")    <| fun _ -> true
-  let pdigit  = psatisfy (Expected "digit")   Char.IsDigit
-  let pletter = psatisfy (Expected "letter")  Char.IsLetter
+  let pchar       = psatisfy (Expected "char")        <| fun _ -> true
+  let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
+  let pletter     = psatisfy (Expected "letter")      Char.IsLetter
+  let pwhitespace = psatisfy (Expected "whitespacew") Char.IsWhiteSpace
 
   let pbind
     (t : Parser<'T>)
@@ -185,10 +186,9 @@ module Parser =
           for i = 0 to e do
             let s = ss.[i]
             let prepend =
-              match i with
-              | 0 -> ""
-              | e -> " or "
-              |_ -> ", "
+              if    i = 0 then  ""
+              elif  i = e then  " or "
+              else              ", "
 
             ignore <| sb.Append prepend
             ignore <| sb.Append (ss.[i])
@@ -198,7 +198,7 @@ module Parser =
 
       Failure (sb.ToString (), pos)
 
-open Parser
+open ParserModule
 
 // Parses an integer: 2130904
 let pint : Parser<int> =
@@ -247,6 +247,7 @@ let parseAndPrint s (p : Parser<'T>)=
 [<EntryPoint>]
 let main argv =
   let rec loop () =
+    printfn "Enter the text to be parsed (example: abc=343;)"
     let line = Console.ReadLine ()
     if line.Length > 0 then
       parseAndPrint line (passignment .>> peos)
