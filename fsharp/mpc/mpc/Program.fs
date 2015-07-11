@@ -20,6 +20,13 @@ module ParserModule =
     | Fork        of Error*Error
     | Group       of Error list
 
+  // A Parser is a function that:
+  //  Takes an input string
+  //  Takes an integer pointing to the next unconsumed character in the  input string
+  //  Takes an integer pointing at the position error messages should be collected
+  //  Returns an optional result
+  //  Returns accumulated error messages for the error position
+  //  Returns the next unconsumed position
   type Parser<'T> = string*int*int -> 'T option*Error*int
 
   module Detail =
@@ -39,6 +46,7 @@ module ParserModule =
 
   open Detail
 
+  // Parser "Atoms"
   let preturn (v : 'T) : Parser<'T> =
     fun (s,pos,epos) ->
       Some v, NoError, pos
@@ -69,6 +77,7 @@ module ParserModule =
   let pletter     = psatisfy (Expected "letter")      Char.IsLetter
   let pwhitespace = psatisfy (Expected "whitespacew") Char.IsWhiteSpace
 
+  // Parser modifiers
   let pbind
     (t : Parser<'T>)
     (fu : 'T -> Parser<'U>) : Parser<'U> =
@@ -127,6 +136,7 @@ module ParserModule =
       let t = ft ()
       t (s,pos,epos)
 
+  // Computation Expression builder
   type ParserBuilder()=
     member x.Delay(ft)      = pdelay ft
     member x.Return(v)      = preturn v
@@ -135,6 +145,7 @@ module ParserModule =
 
   let parser = ParserBuilder()
 
+  // Parse function
   type Result<'T> =
     | Success of 'T*int
     | Failure of string*int
@@ -144,6 +155,11 @@ module ParserModule =
     match ov with
     | Some v -> Success (v, pos)
     | None ->
+      // If parsing failed, rerun the parser with the error position set
+      //  This will return all detected errors at that position
+      //  This approach reduces error collection cost during successful parses
+      let _, err, _ = p (s, 0, pos)
+
       let sb = StringBuilder ()
       let newline () = ignore <| sb.AppendLine ()
       let append (ss : string) = ignore <| sb.Append ss
@@ -167,7 +183,6 @@ module ParserModule =
         extractError r
       | Group es ->
         es |> List.iter extractError
-      let _, err, _ = p (s, 0, pos)
 
       extractError err
 
