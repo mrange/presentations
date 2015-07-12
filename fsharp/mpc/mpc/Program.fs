@@ -43,7 +43,11 @@ module ParserModule =
       | NoError , _       -> rpe
       | _       , NoError -> lpe
       | _       , _       -> Fork (lpe, rpe)
-
+    let errgroup errs  =
+      let ee = errs |> List.filter (function NoError -> false | _ -> true)
+      if ee.IsEmpty then NoError
+      else Group ee
+    
   open Detail
 
   // Parser "Atoms"
@@ -63,7 +67,7 @@ module ParserModule =
         None, err eeos pos epos, pos
 
   let psatisfy pe f : Parser<char> =
-    let eos = Group [ueos; pe]
+    let eos = errgroup [ueos; pe]
     fun (s,pos,epos) ->
       if pos >= s.Length then
         None, err eos pos epos, pos
@@ -76,6 +80,14 @@ module ParserModule =
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
   let pletter     = psatisfy (Expected "letter")      Char.IsLetter
   let pwhitespace = psatisfy (Expected "whitespace")  Char.IsWhiteSpace
+
+  let panyOf (anyOf : string) : Parser<char> =
+    let pe = 
+      anyOf
+      |> Seq.map (fun ch -> Expected <| sprintf "'%s'" (ch.ToString ()))
+      |> Seq.toList
+      |> errgroup
+    psatisfy pe (fun ch -> (anyOf.IndexOf ch) > -1)
 
   // Parser modifiers
   let pbind
@@ -91,17 +103,21 @@ module ParserModule =
       | _ ->
         None, terr, tpos
 
-  let inline (>>=) t fu   = pbind t fu
+  let inline (>>=) t fu     = pbind t fu
 
-  let inline pright t u   = t >>= fun _ -> u
-  let inline pcombine t u = pright t u
-  let inline (>>.) t u    = pright t u
+  let inline pright t u     = t >>= fun _ -> u
+  let inline pcombine t u   = pright t u
+  let inline (>>.) t u      = pright t u
 
-  let inline pleft t u    = t >>= fun left -> u >>= fun _ -> preturn left
-  let inline (.>>) t u    = pleft t u
+  let inline pleft t u      = t >>= fun left -> u >>= fun _ -> preturn left
+  let inline (.>>) t u      = pleft t u
 
-  let inline pmap p m     = p >>= fun v -> preturn (m v)
-  let inline (|>>) p m = pmap p m
+  let inline pbetween b e p = b >>. p .>> e
+
+  let inline pmap p m       = p >>= fun v -> preturn (m v)
+  let inline (|>>) p m      = pmap p m
+
+  let inline (>>!) p v      = p >>= fun _ -> preturn v
 
   let popt (p : Parser<'T>) : Parser<'T option> =
     fun (s,pos, epos) ->
@@ -112,6 +128,8 @@ module ParserModule =
       | _ ->
         Some None, perr, pos
 
+  let inline (>>?) p v      = popt p >>= function None -> preturn v | Some vv -> preturn vv
+
   let pmany (p : Parser<'T>) : Parser<'T list> =
     fun (s,pos,epos) ->
       let rec loop r cpos =
@@ -120,16 +138,90 @@ module ParserModule =
         | Some vp -> loop ((perr,vp)::r) ppos
         | _ ->
           let errs, vs = r |> List.rev |> List.unzip
-          let group = Group (perr::errs)
+          let group = errgroup (perr::errs)
           Some vs, group, cpos
 
       loop [] pos
 
   let pmany1 p = pmany p >>= fun l -> if l.IsEmpty then pfail NoError else preturn l
 
+  let pchoice (ps : Parser<'T> list) : Parser<'T> =
+    fun (s,pos,epos) ->
+      // eloop is used to collect errors at epos
+      let rec eloop perrs ps =
+        match ps with
+        | [] -> errgroup perrs
+        | p::ps ->
+          let _, perr, _= p (s,pos,epos)
+          eloop (perr::perrs) ps
+
+      // loop tests parsers until it find the first match
+      let rec loop perrs ps =
+        match ps with
+        | [] -> None, (errgroup perrs), pos
+        | p::ps ->
+          let ovp, perr, ppos= p (s,pos,epos)
+          match ovp with
+          | Some vp -> 
+            let err = 
+              if epos = pos then
+                eloop (perr::perrs) ps
+              else
+                NoError
+            ovp, err, ppos
+          | _ ->
+            loop (perr::perrs) ps
+
+      loop [] ps
+
+  let pchainl (p : Parser<'T>) (psep : Parser<'T -> 'T -> 'T>) : Parser<'T> =
+    fun (s,pos,epos) ->
+      let rec loop v errs cpos =
+        let ovs, serr, spos = psep (s,cpos,epos)
+        match ovs with
+        | Some vs -> 
+          let ovp, perr, ppos = p (s,spos,epos)
+          match ovp with
+          | Some vp ->
+            loop (vs v vp) (perr::serr::errs) cpos
+          | _ -> 
+            None, errgroup (perr::serr::errs), ppos
+        | None ->
+          (Some v), errgroup (serr::errs), cpos
+
+      let ovp, perr, ppos = p (s,pos,epos)
+      match ovp with
+      | Some vp ->
+          loop vp [perr] ppos
+      | _ -> 
+        None, perr, ppos
+
   let pskip (ch : char) : Parser<unit> =
-    let expected = Expected <| sprintf "'%s'" (String(ch, 1))
+    let expected = Expected <| sprintf "'%s'" (ch.ToString ())
     psatisfy expected (fun c -> ch = c) |>> fun _ -> ()
+
+  let pstr (exp : string) : Parser<unit> =
+    let expected = Expected <| sprintf "'%s'" exp
+    fun (s,pos,epos) ->
+      let e = pos + exp.Length
+      if e > s.Length then
+        None, err expected pos epos, pos
+      else
+        let rec loop pp =
+          if pp < e then
+            let c = s.[pp] = exp.[pp - pos]
+
+            c && (loop (pp + 1))
+          else
+            true
+
+        if loop pos then
+          Some (), err expected pos epos, e
+        else
+          None, err expected pos epos, pos
+
+            
+          
 
   let pdelay (ft : unit -> Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -215,29 +307,83 @@ module ParserModule =
 
 open ParserModule
 
-// Parses an integer: 2130904
-let pint : Parser<int> =
+let pnatural : Parser<uint64*int> =
   pmany1 pdigit
-  |>> List.fold (fun s ch -> s * 10 + (int ch - int '0')) 0
+  |>> fun digits -> 
+    let res = digits |> List.fold (fun s ch -> s * 10UL + (uint64 ch - uint64 '0')) 0UL
+    res, digits.Length
 
-// Parses an identifier: abc
-let pidentifier : Parser<string> =
-  pmany1 pletter
-  |>> (List.toArray >> String)
+type JSON =
+  | NullValue
+  | BooleanValue  of bool
+  | NumberValue   of float
+  | StringValue   of string
+  | ArrayValue    of JSON list
+  | ObjectValue   of (string*JSON) list
 
-// Parses an assignment: abc=343;
-let passignment : Parser<string*int> =
+let pnull   = pstr "null" >>! NullValue
+let pboolean= 
+  pchoice 
+    [
+      pstr "true"   >>! BooleanValue true
+      pstr "false"  >>! BooleanValue false
+    ]
+let pnumber =
+  let psign : Parser<float->float>=
+    pchoice
+      [
+        pskip '-' >>! fun d -> -d
+        pskip '+' >>! id
+      ]
+    >>? id
+
+  let pfrac =
+    parser {
+      do!   pskip '.'
+      let!  ui,i  = pnatural
+      return (float ui) * (pown 10.0 -i)
+    } >>? 0.0
+
+  let pexp =
+    parser {
+      do!   pchoice [pskip 'e'; pskip 'E']
+      let!  sign  = psign
+      let!  ui,_  = pnatural
+      let scale   = sign (double ui)
+      return pown 10.0 (int scale)
+    } >>? 1.0
+    
   parser {
-    let! id = pidentifier
-    do! pskip '='
-    let! i = pint
-    do! pskip ';'
-    return id, i
-  }
+    let! sign = psign
+    let! i,_  = pnatural
+    let! f    = pfrac
+    let! e    = pexp
 
-// Parses assignments: abc=343;dcef=322;
-let passignments : Parser<(string*int) list> =
-  pmany passignment
+    let ur    = (float i + f)*e
+
+    return NumberValue (sign ur)
+  }
+let prawstring = 
+  let pstring_token = pskip '"'
+  let pch   = psatisfy (Expected "char") (function '"' | '\\' -> false | _ -> true)
+  let pech  =
+    parser {
+      do!   pskip '\\'
+      let!  c = panyOf "\"\\/bfnrt"
+      let   r =
+        match c with
+        | 'b' -> '\b'
+        | 'f' -> '\f'
+        | 'n' -> '\n'
+        | 'r' -> '\r'
+        | 't' -> '\t'
+        | _   -> c
+      return r
+    }
+  let pstr  = pmany (pchoice [pch; pech]) |>> (List.toArray >> String)
+  pbetween pstring_token pstring_token pstr
+let pstring = prawstring |>> StringValue
+let pvalue  = pchoice [pnull; pboolean; pnumber; pstring]
 
 let parseAndPrint s (p : Parser<'T>)=
   let res = parse p s
@@ -250,10 +396,10 @@ let parseAndPrint s (p : Parser<'T>)=
 [<EntryPoint>]
 let main argv =
   let rec loop () =
-    printfn "Enter the text to be parsed (example: abc=343;)"
+    printfn "-- \nEnter JSON to be parsed"
     let line = Console.ReadLine ()
     if line.Length > 0 then
-      parseAndPrint line (passignment .>> peos)
+      parseAndPrint line (pvalue .>> peos)
       loop ()
     else
       ()
