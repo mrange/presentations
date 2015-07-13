@@ -10,6 +10,7 @@
 // You must not remove this notice, or any other, from this software.
 // ----------------------------------------------------------------------------------------------
 open System
+open System.Diagnostics
 open System.Text
 // ----------------------------------------------------------------------------------------------
 
@@ -52,31 +53,35 @@ module ParserModule =
 
   open Detail
 
+  let result  ov err pos= ov, err, pos
+  let success v err pos = result (Some v) err pos
+  let failure err pos   = result None err pos
+
   // Parser "Atoms"
   let preturn (v : 'T) : Parser<'T> =
     fun (s,pos,epos) ->
-      Some v, NoError, pos
+      success v NoError pos
 
   let pfail (pe : Error) : Parser<'T> =
     fun (s,pos,epos) ->
-      None, err pe pos epos, pos
+      failure (err pe pos epos) pos
 
   let peos : Parser<unit> =
     fun (s,pos,epos) ->
       if pos >= s.Length then
-        Some (), NoError, pos
+        success () NoError pos
       else
-        None, err eeos pos epos, pos
+        failure (err eeos pos epos) pos
 
   let psatisfy pe f : Parser<char> =
     let eos = errgroup [ueos; pe]
     fun (s,pos,epos) ->
       if pos >= s.Length then
-        None, err eos pos epos, pos
+        failure (err eos pos epos) pos
       elif f s.[pos] then
-        Some s.[pos], NoError, pos + 1
+        success s.[pos] NoError (pos + 1)
       else
-        None, err pe pos epos, pos
+        failure (err eos pos epos) pos
 
   let pchar       = psatisfy (Expected "char")        <| fun _ -> true
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
@@ -101,10 +106,9 @@ module ParserModule =
       | Some vt ->
         let u = fu vt
         let ovu, uerr, upos = u (s,tpos,epos)
-        ovu, errjoin terr uerr, upos
+        result ovu (errjoin terr uerr) upos
       | _ ->
-        None, terr, tpos
-
+        failure terr tpos
   let inline (>>=) t fu     = pbind t fu
 
   let inline pright t u     = t >>= fun _ -> u
@@ -124,26 +128,24 @@ module ParserModule =
   let pdebug (p : Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
       let ovp, perr, ppos = p (s,pos,epos)
-      ovp, perr, ppos
+      result ovp perr ppos
 
   let ptrampoline<'T> () : Parser<'T>*Parser<'T> ref =
     let r = ref <| preturn Unchecked.defaultof<'T>
     let p =
       fun (s,pos,epos) ->
         let ovp, perr, ppos = !r (s,pos,epos)
-        ovp, perr, ppos
+        result ovp perr ppos
     p, r
-
 
   let popt (p : Parser<'T>) : Parser<'T option> =
     fun (s,pos,epos) ->
       let ovp, perr, ppos = p (s,pos,epos)
       match ovp with
       | Some vp ->
-        Some (Some vp), perr, ppos
+        success (Some vp) perr ppos
       | _ ->
-        Some None, perr, pos
-
+        success None perr pos
   let inline (>>?) p v      = popt p >>= function None -> preturn v | Some vv -> preturn vv
 
   let pskip (ch : char) : Parser<unit> =
@@ -155,7 +157,7 @@ module ParserModule =
     fun (s,pos,epos) ->
       let e = pos + exp.Length
       if e > s.Length then
-        None, err expected pos epos, pos
+        failure (err expected pos epos) pos
       else
         let rec loop pp =
           if pp < e then
@@ -166,20 +168,21 @@ module ParserModule =
             true
 
         if loop pos then
-          Some (), err expected pos epos, e
+          success () (err expected pos epos) e
         else
-          None, err expected pos epos, pos
+          failure (err expected pos epos) pos
 
   let pmany (p : Parser<'T>) : Parser<'T list> =
     fun (s,pos,epos) ->
       let rec loop r cpos =
         let ovp, perr, ppos= p (s,cpos,epos)
         match ovp with
-        | Some vp -> loop ((perr,vp)::r) ppos
+        | Some vp ->
+          loop ((perr,vp)::r) ppos
         | _ ->
           let errs, vs = r |> List.rev |> List.unzip
           let group = errgroup (perr::errs)
-          Some vs, group, cpos
+          success vs group cpos
 
       loop [] pos
 
@@ -203,7 +206,8 @@ module ParserModule =
       // eloop is used to collect errors at epos
       let rec eloop perrs ps =
         match ps with
-        | [] -> errgroup perrs
+        | [] ->
+          errgroup perrs
         | p::ps ->
           let _, perr, _= p (s,pos,epos)
           eloop (perr::perrs) ps
@@ -211,17 +215,18 @@ module ParserModule =
       // loop tests parsers until it find the first match
       let rec loop perrs ps mepos =
         match ps with
-        | [] -> None, (errgroup perrs), mepos
+        | [] ->
+          failure (errgroup perrs) mepos
         | p::ps ->
           let ovp, perr, ppos= p (s,pos,epos)
           match ovp with
           | Some vp ->
             let err =
-              if epos = pos then
+              if epos = ppos then
                 eloop (perr::perrs) ps
               else
                 NoError
-            ovp, err, ppos
+            success vp err ppos
           | _ ->
             loop (perr::perrs) ps (max ppos mepos)
 
@@ -400,7 +405,7 @@ module JSONModule =
 
     let pstring = prawstring |>> StringValue
 
-    let pvalue  = pchoice [pnull; pboolean; pnumber; pstring; parray; pobject] .>> pwhitespaces
+    let pvalue  = pchoice [pnull; pboolean; pdebug pnumber; pstring; parray; pobject] .>> pwhitespaces
 
     let ptk ch = pskip ch .>> pwhitespaces
 
@@ -423,7 +428,7 @@ module JSONModule =
     rparray   := parr
     rpobject  := pobj
 
-    pwhitespaces >>. pchoice [pdebug pobject; pdebug parray] .>> peos
+    pwhitespaces >>. pchoice [pobject; parray] .>> peos
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
