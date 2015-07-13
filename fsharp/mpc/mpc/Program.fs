@@ -47,7 +47,7 @@ module ParserModule =
       | NoError , _       -> rpe
       | _       , NoError -> lpe
       | _       , _       -> Fork (lpe, rpe)
-    let errgroup errs  =
+    let inline errgroup errs  =
       let ee = errs |> List.filter (function NoError -> false | _ -> true)
       if ee.IsEmpty then NoError
       else Group ee
@@ -88,6 +88,30 @@ module ParserModule =
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
   let pletter     = psatisfy (Expected "letter")      Char.IsLetter
   let pwhitespace = psatisfy (Expected "whitespace")  Char.IsWhiteSpace
+
+  let pskip (ch : char) : Parser<unit> =
+    let expected = Expected <| sprintf "'%s'" (ch.ToString ())
+    psatisfy expected (fun c -> ch = c) |>> fun _ -> ()
+
+  let pstr (exp : string) : Parser<unit> =
+    let expected = Expected <| sprintf "'%s'" exp
+    fun (s,pos,epos) ->
+      let e = pos + exp.Length
+      if e > s.Length then
+        failure (err expected pos epos) pos pos
+      else
+        let rec loop pp =
+          if pp < e then
+            let c = s.[pp] = exp.[pp - pos]
+
+            c && (loop (pp + 1))
+          else
+            true
+
+        if loop pos then
+          success () (err expected pos epos) e e
+        else
+          failure (err expected pos epos) pos pos
 
   let panyOf (anyOf : string) : Parser<char> =
     let pe =
@@ -149,30 +173,6 @@ module ParserModule =
         success None perr pos pmpos
   let inline (>>?) p v      = popt p >>= function None -> preturn v | Some vv -> preturn vv
 
-  let pskip (ch : char) : Parser<unit> =
-    let expected = Expected <| sprintf "'%s'" (ch.ToString ())
-    psatisfy expected (fun c -> ch = c) |>> fun _ -> ()
-
-  let pstr (exp : string) : Parser<unit> =
-    let expected = Expected <| sprintf "'%s'" exp
-    fun (s,pos,epos) ->
-      let e = pos + exp.Length
-      if e > s.Length then
-        failure (err expected pos epos) pos pos
-      else
-        let rec loop pp =
-          if pp < e then
-            let c = s.[pp] = exp.[pp - pos]
-
-            c && (loop (pp + 1))
-          else
-            true
-
-        if loop pos then
-          success () (err expected pos epos) e e
-        else
-          failure (err expected pos epos) pos pos
-
   let pmany (p : Parser<'T>) : Parser<'T list> =
     fun (s,pos,epos) ->
       let rec loop r cpos =
@@ -196,7 +196,6 @@ module ParserModule =
     >>= fun first ->
       pmany (psep >>. p)
       >>= fun rest -> preturn (first::rest)
-    >>? []
 
   let pmanySepBy (p : Parser<'T>) (psep : Parser<_>) : Parser<'T list> =
     pmanySepBy1 p psep
@@ -230,7 +229,7 @@ module ParserModule =
                 lmpos, NoError
             success vp err ppos pmpos
           | _ ->
-            loop (perr::perrs) (max pmpos mpos) ps 
+            loop (perr::perrs) (max pmpos mpos) ps
 
       loop [] 0 ps
 
