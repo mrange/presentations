@@ -30,7 +30,8 @@ module ParserModule =
   //  Returns an optional result
   //  Returns accumulated error messages for the error position
   //  Returns the next unconsumed position
-  type Parser<'T> = string*int*int -> 'T option*Error*int
+  //  Returns the most unconsumed position
+  type Parser<'T> = string*int*int -> 'T option*Error*int*int
 
   module Detail =
     let ueos        = Unexpected "EOS"
@@ -53,35 +54,35 @@ module ParserModule =
 
   open Detail
 
-  let result  ov err pos= ov, err, pos
-  let success v err pos = result (Some v) err pos
-  let failure err pos   = result None err pos
+  let result  ov  err pos mpos  = ov, err, pos, mpos
+  let success v   err pos mpos  = result (Some v) err pos mpos
+  let failure     err pos mpos  = result None err pos mpos
 
   // Parser "Atoms"
   let preturn (v : 'T) : Parser<'T> =
     fun (s,pos,epos) ->
-      success v NoError pos
+      success v NoError pos pos
 
   let pfail (pe : Error) : Parser<'T> =
     fun (s,pos,epos) ->
-      failure (err pe pos epos) pos
+      failure (err pe pos epos) pos pos
 
   let peos : Parser<unit> =
     fun (s,pos,epos) ->
       if pos >= s.Length then
-        success () NoError pos
+        success () NoError pos pos
       else
-        failure (err eeos pos epos) pos
+        failure (err eeos pos epos) pos pos
 
   let psatisfy pe f : Parser<char> =
     let eos = errgroup [ueos; pe]
     fun (s,pos,epos) ->
       if pos >= s.Length then
-        failure (err eos pos epos) pos
+        failure (err eos pos epos) pos pos
       elif f s.[pos] then
-        success s.[pos] NoError (pos + 1)
+        success s.[pos] NoError (pos + 1) (pos + 1)
       else
-        failure (err eos pos epos) pos
+        failure (err eos pos epos) pos pos
 
   let pchar       = psatisfy (Expected "char")        <| fun _ -> true
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
@@ -101,14 +102,14 @@ module ParserModule =
     (t : Parser<'T>)
     (fu : 'T -> Parser<'U>) : Parser<'U> =
     fun (s,pos,epos) ->
-      let ovt,terr,tpos = t (s,pos,epos)
+      let ovt,terr,tpos, tmpos = t (s,pos,epos)
       match ovt with
       | Some vt ->
         let u = fu vt
-        let ovu, uerr, upos = u (s,tpos,epos)
-        result ovu (errjoin terr uerr) upos
+        let ovu, uerr, upos, umpos = u (s,tpos,epos)
+        result ovu (errjoin terr uerr) upos (max tmpos umpos)
       | _ ->
-        failure terr tpos
+        failure terr tpos tmpos
   let inline (>>=) t fu     = pbind t fu
 
   let inline pright t u     = t >>= fun _ -> u
@@ -127,25 +128,25 @@ module ParserModule =
 
   let pdebug (p : Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
-      let ovp, perr, ppos = p (s,pos,epos)
-      result ovp perr ppos
+      let ovp, perr, ppos, pmpos = p (s,pos,epos)
+      result ovp perr ppos pmpos
 
   let ptrampoline<'T> () : Parser<'T>*Parser<'T> ref =
     let r = ref <| preturn Unchecked.defaultof<'T>
     let p =
       fun (s,pos,epos) ->
-        let ovp, perr, ppos = !r (s,pos,epos)
-        result ovp perr ppos
+        let ovp, perr, ppos, pmpos = !r (s,pos,epos)
+        result ovp perr ppos pmpos
     p, r
 
   let popt (p : Parser<'T>) : Parser<'T option> =
     fun (s,pos,epos) ->
-      let ovp, perr, ppos = p (s,pos,epos)
+      let ovp, perr, ppos, pmpos = p (s,pos,epos)
       match ovp with
       | Some vp ->
-        success (Some vp) perr ppos
+        success (Some vp) perr ppos pmpos
       | _ ->
-        success None perr pos
+        success None perr pos pmpos
   let inline (>>?) p v      = popt p >>= function None -> preturn v | Some vv -> preturn vv
 
   let pskip (ch : char) : Parser<unit> =
@@ -157,7 +158,7 @@ module ParserModule =
     fun (s,pos,epos) ->
       let e = pos + exp.Length
       if e > s.Length then
-        failure (err expected pos epos) pos
+        failure (err expected pos epos) pos pos
       else
         let rec loop pp =
           if pp < e then
@@ -168,21 +169,21 @@ module ParserModule =
             true
 
         if loop pos then
-          success () (err expected pos epos) e
+          success () (err expected pos epos) e e
         else
-          failure (err expected pos epos) pos
+          failure (err expected pos epos) pos pos
 
   let pmany (p : Parser<'T>) : Parser<'T list> =
     fun (s,pos,epos) ->
       let rec loop r cpos =
-        let ovp, perr, ppos= p (s,cpos,epos)
+        let ovp, perr, ppos, pmpos = p (s,cpos,epos)
         match ovp with
         | Some vp ->
           loop ((perr,vp)::r) ppos
         | _ ->
           let errs, vs = r |> List.rev |> List.unzip
           let group = errgroup (perr::errs)
-          success vs group cpos
+          success vs group cpos pmpos
 
       loop [] pos
 
@@ -204,33 +205,34 @@ module ParserModule =
   let pchoice (ps : Parser<'T> list) : Parser<'T> =
     fun (s,pos,epos) ->
       // eloop is used to collect errors at epos
-      let rec eloop perrs ps =
+      let rec eloop perrs mpos ps =
         match ps with
         | [] ->
-          errgroup perrs
+          mpos, errgroup perrs
         | p::ps ->
-          let _, perr, _= p (s,pos,epos)
-          eloop (perr::perrs) ps
+          let _, perr, _, pmpos = p (s,pos,epos)
+          eloop (perr::perrs) (max pmpos mpos) ps
 
       // loop tests parsers until it find the first match
-      let rec loop perrs ps mepos =
+      let rec loop perrs mpos ps =
         match ps with
         | [] ->
-          failure (errgroup perrs) mepos
+          failure (errgroup perrs) mpos mpos
         | p::ps ->
-          let ovp, perr, ppos= p (s,pos,epos)
+          let ovp, perr, ppos, pmpos= p (s,pos,epos)
           match ovp with
           | Some vp ->
-            let err =
-              if epos = ppos then
-                eloop (perr::perrs) ps
+            let lmpos = max pmpos mpos
+            let lmpos, err =
+              if epos = pmpos then
+                eloop (perr::perrs) lmpos ps
               else
-                NoError
-            success vp err ppos
+                lmpos, NoError
+            success vp err ppos pmpos
           | _ ->
-            loop (perr::perrs) ps (max ppos mepos)
+            loop (perr::perrs) (max pmpos mpos) ps 
 
-      loop [] ps 0
+      loop [] 0 ps
 
   let pdelay (ft : unit -> Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -252,14 +254,14 @@ module ParserModule =
     | Failure of string*int
 
   let parse (p : Parser<'T>) (s : string) : Result<'T> =
-    let ov, _, pos = p (s, 0, Int32.MaxValue)
+    let ov, _, pos, mpos = p (s, 0, Int32.MaxValue)
     match ov with
     | Some v -> Success (v, pos)
     | None ->
       // If parsing failed, rerun the parser with the error position set
       //  This will return all detected errors at that position
       //  This approach reduces error collection cost during successful parses
-      let _, err, _ = p (s, 0, pos)
+      let _, err, _, _ = p (s, 0, mpos)
 
       let sb = StringBuilder ()
       let newline () = ignore <| sb.AppendLine ()
