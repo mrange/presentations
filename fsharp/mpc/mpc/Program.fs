@@ -75,14 +75,14 @@ module ParserModule =
         failure (err eeos pos epos) pos pos
 
   let psatisfy pe f : Parser<char> =
-    let eos = errgroup [ueos; pe]
+    let pe = errgroup [ueos; pe]
     fun (s,pos,epos) ->
       if pos >= s.Length then
-        failure (err eos pos epos) pos pos
+        failure (err pe pos epos) pos pos
       elif f s.[pos] then
         success s.[pos] NoError (pos + 1) (pos + 1)
       else
-        failure (err eos pos epos) pos pos
+        failure (err pe pos epos) pos pos
 
   let pchar       = psatisfy (Expected "char")        <| fun _ -> true
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
@@ -90,8 +90,14 @@ module ParserModule =
   let pwhitespace = psatisfy (Expected "whitespace")  Char.IsWhiteSpace
 
   let pskip (ch : char) : Parser<unit> =
-    let expected = Expected <| sprintf "'%s'" (ch.ToString ())
-    psatisfy expected (fun c -> ch = c) |>> fun _ -> ()
+    let pe = errgroup [ueos; Expected <| sprintf "'%s'" (ch.ToString ())]
+    fun (s,pos,epos) ->
+      if pos >= s.Length then
+        failure (err pe pos epos) pos pos
+      elif s.[pos] = ch then
+        success () NoError (pos + 1) (pos + 1)
+      else
+        failure (err pe pos epos) pos pos
 
   let pstr (exp : string) : Parser<unit> =
     let expected = Expected <| sprintf "'%s'" exp
