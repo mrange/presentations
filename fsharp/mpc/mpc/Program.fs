@@ -11,7 +11,9 @@
 // ----------------------------------------------------------------------------------------------
 open System
 open System.Text
+// ----------------------------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------------------------
 module ParserModule =
   type Error =
     | NoError
@@ -47,7 +49,7 @@ module ParserModule =
       let ee = errs |> List.filter (function NoError -> false | _ -> true)
       if ee.IsEmpty then NoError
       else Group ee
-    
+
   open Detail
 
   // Parser "Atoms"
@@ -82,7 +84,7 @@ module ParserModule =
   let pwhitespace = psatisfy (Expected "whitespace")  Char.IsWhiteSpace
 
   let panyOf (anyOf : string) : Parser<char> =
-    let pe = 
+    let pe =
       anyOf
       |> Seq.map (fun ch -> Expected <| sprintf "'%s'" (ch.ToString ()))
       |> Seq.toList
@@ -99,7 +101,7 @@ module ParserModule =
       | Some vt ->
         let u = fu vt
         let ovu, uerr, upos = u (s,tpos,epos)
-        ovu, errjoin terr uerr , upos
+        ovu, errjoin terr uerr, upos
       | _ ->
         None, terr, tpos
 
@@ -119,9 +121,23 @@ module ParserModule =
 
   let inline (>>!) p v      = p >>= fun _ -> preturn v
 
+  let pdebug (p : Parser<'T>) : Parser<'T> =
+    fun (s,pos,epos) ->
+      let ovp, perr, ppos = p (s,pos,epos)
+      ovp, perr, ppos
+
+  let ptrampoline<'T> () : Parser<'T>*Parser<'T> ref =
+    let r = ref <| preturn Unchecked.defaultof<'T>
+    let p =
+      fun (s,pos,epos) ->
+        let ovp, perr, ppos = !r (s,pos,epos)
+        ovp, perr, ppos
+    p, r
+
+
   let popt (p : Parser<'T>) : Parser<'T option> =
-    fun (s,pos, epos) ->
-      let ovp, perr, ppos = p (s,pos, epos)
+    fun (s,pos,epos) ->
+      let ovp, perr, ppos = p (s,pos,epos)
       match ovp with
       | Some vp ->
         Some (Some vp), perr, ppos
@@ -129,72 +145,6 @@ module ParserModule =
         Some None, perr, pos
 
   let inline (>>?) p v      = popt p >>= function None -> preturn v | Some vv -> preturn vv
-
-  let pmany (p : Parser<'T>) : Parser<'T list> =
-    fun (s,pos,epos) ->
-      let rec loop r cpos =
-        let ovp, perr, ppos= p (s,cpos,epos)
-        match ovp with
-        | Some vp -> loop ((perr,vp)::r) ppos
-        | _ ->
-          let errs, vs = r |> List.rev |> List.unzip
-          let group = errgroup (perr::errs)
-          Some vs, group, cpos
-
-      loop [] pos
-
-  let pmany1 p = pmany p >>= fun l -> if l.IsEmpty then pfail NoError else preturn l
-
-  let pchoice (ps : Parser<'T> list) : Parser<'T> =
-    fun (s,pos,epos) ->
-      // eloop is used to collect errors at epos
-      let rec eloop perrs ps =
-        match ps with
-        | [] -> errgroup perrs
-        | p::ps ->
-          let _, perr, _= p (s,pos,epos)
-          eloop (perr::perrs) ps
-
-      // loop tests parsers until it find the first match
-      let rec loop perrs ps =
-        match ps with
-        | [] -> None, (errgroup perrs), pos
-        | p::ps ->
-          let ovp, perr, ppos= p (s,pos,epos)
-          match ovp with
-          | Some vp -> 
-            let err = 
-              if epos = pos then
-                eloop (perr::perrs) ps
-              else
-                NoError
-            ovp, err, ppos
-          | _ ->
-            loop (perr::perrs) ps
-
-      loop [] ps
-
-  let pchainl (p : Parser<'T>) (psep : Parser<'T -> 'T -> 'T>) : Parser<'T> =
-    fun (s,pos,epos) ->
-      let rec loop v errs cpos =
-        let ovs, serr, spos = psep (s,cpos,epos)
-        match ovs with
-        | Some vs -> 
-          let ovp, perr, ppos = p (s,spos,epos)
-          match ovp with
-          | Some vp ->
-            loop (vs v vp) (perr::serr::errs) cpos
-          | _ -> 
-            None, errgroup (perr::serr::errs), ppos
-        | None ->
-          (Some v), errgroup (serr::errs), cpos
-
-      let ovp, perr, ppos = p (s,pos,epos)
-      match ovp with
-      | Some vp ->
-          loop vp [perr] ppos
-      | _ -> 
-        None, perr, ppos
 
   let pskip (ch : char) : Parser<unit> =
     let expected = Expected <| sprintf "'%s'" (ch.ToString ())
@@ -220,8 +170,62 @@ module ParserModule =
         else
           None, err expected pos epos, pos
 
-            
-          
+  let pmany (p : Parser<'T>) : Parser<'T list> =
+    fun (s,pos,epos) ->
+      let rec loop r cpos =
+        let ovp, perr, ppos= p (s,cpos,epos)
+        match ovp with
+        | Some vp -> loop ((perr,vp)::r) ppos
+        | _ ->
+          let errs, vs = r |> List.rev |> List.unzip
+          let group = errgroup (perr::errs)
+          Some vs, group, cpos
+
+      loop [] pos
+
+  let pwhitespaces= pmany pwhitespace >>! ()
+
+  let pmany1 p = pmany p >>= fun l -> if l.IsEmpty then pfail NoError else preturn l
+
+  let pmanySepBy1 (p : Parser<'T>) (psep : Parser<_>) : Parser<'T list> =
+    p
+    >>= fun first ->
+      pmany (psep >>. p)
+      >>= fun rest -> preturn (first::rest)
+    >>? []
+
+  let pmanySepBy (p : Parser<'T>) (psep : Parser<_>) : Parser<'T list> =
+    pmanySepBy1 p psep
+    >>? []
+
+  let pchoice (ps : Parser<'T> list) : Parser<'T> =
+    fun (s,pos,epos) ->
+      // eloop is used to collect errors at epos
+      let rec eloop perrs ps =
+        match ps with
+        | [] -> errgroup perrs
+        | p::ps ->
+          let _, perr, _= p (s,pos,epos)
+          eloop (perr::perrs) ps
+
+      // loop tests parsers until it find the first match
+      let rec loop perrs ps mepos =
+        match ps with
+        | [] -> None, (errgroup perrs), mepos
+        | p::ps ->
+          let ovp, perr, ppos= p (s,pos,epos)
+          match ovp with
+          | Some vp ->
+            let err =
+              if epos = pos then
+                eloop (perr::perrs) ps
+              else
+                NoError
+            ovp, err, ppos
+          | _ ->
+            loop (perr::perrs) ps (max ppos mepos)
+
+      loop [] ps 0
 
   let pdelay (ft : unit -> Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -304,87 +308,128 @@ module ParserModule =
       buildString "Unexpected " ues
 
       Failure (sb.ToString (), pos)
+// ----------------------------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------------------------
+module JSONModule =
+  open ParserModule
+
+  type JSON =
+    | NullValue
+    | BooleanValue  of bool
+    | NumberValue   of float
+    | StringValue   of string
+    | ArrayValue    of JSON list
+    | ObjectValue   of (string*JSON) list
+
+  let pjson =
+    let pnatural : Parser<uint64*int> =
+      pmany1 pdigit
+      |>> fun digits ->
+        let res = digits |> List.fold (fun s ch -> s * 10UL + (uint64 ch - uint64 '0')) 0UL
+        res, digits.Length
+
+    let parray  , rparray   = ptrampoline<JSON> ()
+
+    let pobject , rpobject  = ptrampoline<JSON> ()
+
+    let pnull   = pstr "null" >>! NullValue
+
+    let pboolean=
+      pchoice
+        [
+          pstr "true"   >>! BooleanValue true
+          pstr "false"  >>! BooleanValue false
+        ]
+
+    let pnumber =
+      let psign : Parser<float->float>=
+        pchoice
+          [
+            pskip '-' >>! fun d -> -d
+            pskip '+' >>! id
+          ]
+        >>? id
+
+      let pfrac =
+        parser {
+          do!   pskip '.'
+          let!  ui,i  = pnatural
+          return (float ui) * (pown 10.0 -i)
+        } >>? 0.0
+
+      let pexp =
+        parser {
+          do!   pchoice [pskip 'e'; pskip 'E']
+          let!  sign  = psign
+          let!  ui,_  = pnatural
+          let scale   = sign (double ui)
+          return pown 10.0 (int scale)
+        } >>? 1.0
+
+      parser {
+        let! sign = psign
+        let! i,_  = pnatural
+        let! f    = pfrac
+        let! e    = pexp
+
+        let ur    = (float i + f)*e
+
+        return NumberValue (sign ur)
+      }
+
+    let prawstring =
+      let pstring_token = pskip '"'
+      let pch   = psatisfy (Expected "char") (function '"' | '\\' -> false | _ -> true)
+      let pech  =
+        parser {
+          do!   pskip '\\'
+          let!  c = panyOf "\"\\/bfnrt"
+          let   r =
+            match c with
+            | 'b' -> '\b'
+            | 'f' -> '\f'
+            | 'n' -> '\n'
+            | 'r' -> '\r'
+            | 't' -> '\t'
+            | _   -> c
+          return r
+        }
+      let pstr  = pmany (pchoice [pch; pech]) |>> (List.toArray >> String)
+      pbetween pstring_token pstring_token pstr
+
+    let pstring = prawstring |>> StringValue
+
+    let pvalue  = pchoice [pnull; pboolean; pnumber; pstring; parray; pobject] .>> pwhitespaces
+
+    let ptk ch = pskip ch .>> pwhitespaces
+
+    let parr =
+      let pvalues = pmanySepBy pvalue (ptk ',') |>> ArrayValue
+      pbetween (ptk '[') (ptk ']') pvalues
+
+    let pobj =
+      let pmember =
+        parser {
+          let!  name  = prawstring
+          do!   pskip ':'
+          let!  value = pvalue
+
+          return name, value
+        }
+      let pmembers = pmanySepBy pmember (ptk ',') |>> ObjectValue
+      pbetween (ptk '{') (ptk '}') pmembers
+
+    rparray   := parr
+    rpobject  := pobj
+
+    pwhitespaces >>. pchoice [pdebug pobject; pdebug parray] .>> peos
+// ----------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------
 open ParserModule
-
-let pnatural : Parser<uint64*int> =
-  pmany1 pdigit
-  |>> fun digits -> 
-    let res = digits |> List.fold (fun s ch -> s * 10UL + (uint64 ch - uint64 '0')) 0UL
-    res, digits.Length
-
-type JSON =
-  | NullValue
-  | BooleanValue  of bool
-  | NumberValue   of float
-  | StringValue   of string
-  | ArrayValue    of JSON list
-  | ObjectValue   of (string*JSON) list
-
-let pnull   = pstr "null" >>! NullValue
-let pboolean= 
-  pchoice 
-    [
-      pstr "true"   >>! BooleanValue true
-      pstr "false"  >>! BooleanValue false
-    ]
-let pnumber =
-  let psign : Parser<float->float>=
-    pchoice
-      [
-        pskip '-' >>! fun d -> -d
-        pskip '+' >>! id
-      ]
-    >>? id
-
-  let pfrac =
-    parser {
-      do!   pskip '.'
-      let!  ui,i  = pnatural
-      return (float ui) * (pown 10.0 -i)
-    } >>? 0.0
-
-  let pexp =
-    parser {
-      do!   pchoice [pskip 'e'; pskip 'E']
-      let!  sign  = psign
-      let!  ui,_  = pnatural
-      let scale   = sign (double ui)
-      return pown 10.0 (int scale)
-    } >>? 1.0
-    
-  parser {
-    let! sign = psign
-    let! i,_  = pnatural
-    let! f    = pfrac
-    let! e    = pexp
-
-    let ur    = (float i + f)*e
-
-    return NumberValue (sign ur)
-  }
-let prawstring = 
-  let pstring_token = pskip '"'
-  let pch   = psatisfy (Expected "char") (function '"' | '\\' -> false | _ -> true)
-  let pech  =
-    parser {
-      do!   pskip '\\'
-      let!  c = panyOf "\"\\/bfnrt"
-      let   r =
-        match c with
-        | 'b' -> '\b'
-        | 'f' -> '\f'
-        | 'n' -> '\n'
-        | 'r' -> '\r'
-        | 't' -> '\t'
-        | _   -> c
-      return r
-    }
-  let pstr  = pmany (pchoice [pch; pech]) |>> (List.toArray >> String)
-  pbetween pstring_token pstring_token pstr
-let pstring = prawstring |>> StringValue
-let pvalue  = pchoice [pnull; pboolean; pnumber; pstring]
-
+open JSONModule
+// ----------------------------------------------------------------------------------------------
 let parseAndPrint s (p : Parser<'T>)=
   let res = parse p s
   match res with
@@ -392,14 +437,14 @@ let parseAndPrint s (p : Parser<'T>)=
     printfn "Success: Parsed %d characters as: %A" pos v
   | Failure (msg, pos) ->
     printfn "Failed: Parsing stopped at pos: %d\n%s" pos msg
-
+// ----------------------------------------------------------------------------------------------
 [<EntryPoint>]
 let main argv =
   let rec loop () =
     printfn "-- \nEnter JSON to be parsed"
     let line = Console.ReadLine ()
     if line.Length > 0 then
-      parseAndPrint line (pvalue .>> peos)
+      parseAndPrint line (pjson .>> peos)
       loop ()
     else
       ()
@@ -407,3 +452,4 @@ let main argv =
   loop ()
 
   0
+// ----------------------------------------------------------------------------------------------
