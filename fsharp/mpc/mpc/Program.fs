@@ -197,6 +197,11 @@ module ParserModule =
 
   let pmany1 p = pmany p >>= fun l -> if l.IsEmpty then pfail NoError else preturn l
 
+  let mapListToString = List.toArray >> fun cs -> String(cs)
+
+  let pmanyStr p  = pmany p |>> mapListToString
+  let pmanyStr1 p = pmany1 p |>> mapListToString
+
   let pmanySepBy1 (p : Parser<'T>) (psep : Parser<_>) : Parser<'T list> =
     p
     >>= fun first ->
@@ -206,6 +211,30 @@ module ParserModule =
   let pmanySepBy (p : Parser<'T>) (psep : Parser<_>) : Parser<'T list> =
     pmanySepBy1 p psep
     >>? []
+
+  let pchainl (p : Parser<'T>) (psep : Parser<'T -> 'T -> 'T>) : Parser<'T> =
+    fun (s,pos,epos) ->
+      let rec loop v errs cpos cmpos =
+        let ovs, serr, spos, smpos = psep (s,cpos,epos)
+        let maxmpos = max smpos cmpos
+        match ovs with
+        | Some vs ->
+          let ovp, perr, ppos, pmpos = p (s,spos,epos)
+          let maxmpos = max pmpos maxmpos
+          match ovp with
+          | Some vp ->
+            loop (vs v vp) (perr::serr::errs) ppos maxmpos
+          | _ ->
+            failure (errgroup (perr::serr::errs)) ppos maxmpos
+        | None ->
+          success v (errgroup (serr::errs)) cpos maxmpos
+
+      let ovp, perr, ppos, pmpos = p (s,pos,epos)
+      match ovp with
+      | Some vp ->
+          loop vp [perr] ppos pmpos
+      | _ ->
+        failure perr ppos pmpos
 
   let pchoice (ps : Parser<'T> list) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -238,6 +267,15 @@ module ParserModule =
             loop (perr::perrs) (max pmpos mpos) ps
 
       loop [] 0 ps
+
+  let pnatural : Parser<uint64*int> =
+    pmany1 pdigit
+    |>> fun digits ->
+      let res = digits |> List.fold (fun s ch -> s * 10UL + (uint64 ch - uint64 '0')) 0UL
+      res, digits.Length
+
+  let puint64 = pnatural |>> fun (ui,_) -> ui
+  let puint32 = pnatural |>> fun (ui,_) -> uint32 ui
 
   let pdelay (ft : unit -> Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -323,6 +361,93 @@ module ParserModule =
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
+module CalculatorModule =
+  open ParserModule
+  open System.Text
+
+  type BinaryOperator =
+    | Add
+    | Subtract
+    | Multiply
+    | Divide
+    | Modulo
+
+  let binaryOperation = function
+    | Add       -> ( + )
+    | Subtract  -> ( - )
+    | Multiply  -> ( * )
+    | Divide    -> ( / )
+    | Modulo    -> ( % )
+
+  let binaryOperatorName = function
+    | Add       -> '+'
+    | Subtract  -> '-'
+    | Multiply  -> '*'
+    | Divide    -> '/'
+    | Modulo    -> '%'
+
+  type Expression =
+    | Value     of  int
+    | Variable  of  string
+    | Binary    of  Expression*BinaryOperator*Expression
+
+  let mapBinaryOperator =
+    let bin op l r = Binary (l, op, r)
+    function
+    | '+' -> bin Add
+    | '-' -> bin Subtract
+    | '*' -> bin Multiply
+    | '/' -> bin Divide
+    | '%' -> bin Modulo
+    | _   -> bin Add
+
+  let rec eval (lookup : string->int) = function
+    | Value     i     -> i
+    | Variable  v     -> lookup v
+    | Binary (l,bop,r)->
+      let lv  = eval lookup l
+      let rv  = eval lookup r
+      let bf  = binaryOperation bop
+      bf lv rv
+
+  let asString e =
+    let sb = StringBuilder ()
+    let rec impl = function
+      | Value     i     ->
+        ignore <| sb.Append i
+      | Variable  v     ->
+        ignore <| sb.Append '\''
+        ignore <| sb.Append v
+        ignore <| sb.Append '\''
+      | Binary (l,bop,r)->
+        ignore <| sb.Append '('
+        impl l
+        ignore <| sb.Append (binaryOperatorName bop)
+        impl r
+        ignore <| sb.Append ')'
+
+    impl e
+
+    sb.ToString ()
+
+  let pcalculator =
+    let ptk ch        = pskip ch .>> pwhitespaces
+
+    let pexpr, rpexpr = ptrampoline<Expression> ()
+    let pvalue        = puint32 |>> fun ui -> Value (int ui)
+    let pvariable     = pmanyStr1 pletter |>> Variable
+    let psubexpr      = pbetween (ptk '(') (ptk ')') pexpr
+    let pterm         = pchoice [pvalue; pvariable; psubexpr]
+    let pop0          = panyOf "*/%" |>> mapBinaryOperator .>> pwhitespaces
+    let plevel0       = pchainl pterm pop0
+    let pop1          = panyOf "+-" |>> mapBinaryOperator .>> pwhitespaces
+    let plevel1       = pchainl plevel0 pop1
+    rpexpr := plevel1
+    pwhitespaces >>. plevel1 .>> peos
+
+// ----------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------
 module JSONModule =
   open ParserModule
 
@@ -335,12 +460,6 @@ module JSONModule =
     | ObjectValue   of (string*JSON) list
 
   let pjson =
-    let pnatural : Parser<uint64*int> =
-      pmany1 pdigit
-      |>> fun digits ->
-        let res = digits |> List.fold (fun s ch -> s * 10UL + (uint64 ch - uint64 '0')) 0UL
-        res, digits.Length
-
     let parray  , rparray   = ptrampoline<JSON> ()
 
     let pobject , rpobject  = ptrampoline<JSON> ()
@@ -407,7 +526,7 @@ module JSONModule =
             | _   -> c
           return r
         }
-      let pstr  = pmany (pchoice [pch; pech]) |>> (List.toArray >> String)
+      let pstr  = pmany (pchoice [pch; pech]) |>> (List.toArray >> fun cs -> String(cs))
       pbetween pstring_token pstring_token pstr
 
     let pstring = prawstring |>> StringValue
@@ -440,9 +559,11 @@ module JSONModule =
 
 // ----------------------------------------------------------------------------------------------
 open ParserModule
+open CalculatorModule
 open JSONModule
 // ----------------------------------------------------------------------------------------------
-let parseAndPrint s (p : Parser<'T>)=
+let parseAndPrint (p : Parser<'T>) s=
+  printfn "Input: %s" s
   let res = parse p s
   match res with
   | Success (v,pos) ->
@@ -452,11 +573,13 @@ let parseAndPrint s (p : Parser<'T>)=
 // ----------------------------------------------------------------------------------------------
 [<EntryPoint>]
 let main argv =
+  let parse s = parseAndPrint pcalculator s
+
   let rec loop () =
-    printfn "-- \nEnter JSON to be parsed"
+    printfn "-- \nEnter expression to be parsed"
     let line = Console.ReadLine ()
     if line.Length > 0 then
-      parseAndPrint line (pjson .>> peos)
+      parse line
       loop ()
     else
       ()
