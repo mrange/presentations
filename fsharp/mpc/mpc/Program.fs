@@ -10,8 +10,9 @@
 // You must not remove this notice, or any other, from this software.
 // ----------------------------------------------------------------------------------------------
 open System
-open System.Diagnostics
+open System.Globalization
 open System.Text
+open System.Threading
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ module ParserModule =
   let inline pmap p m       = p >>= fun v -> preturn (m v)
   let inline (|>>) p m      = pmap p m
 
-  let inline (>>!) p v      = p >>= fun _ -> preturn v
+  let inline (>>%) p v      = p >>= fun _ -> preturn v
 
   let pdebug (p : Parser<'T>) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -195,7 +196,7 @@ module ParserModule =
 
       loop [] pos
 
-  let pwhitespaces= pmany pwhitespace >>! ()
+  let pwhitespaces= pmany pwhitespace >>% ()
 
   let pmany1 p = pmany p >>= fun l -> if l.IsEmpty then pfail NoError else preturn l
 
@@ -504,24 +505,23 @@ module JSONModule =
 
     sb.ToString ()
 
-
   let pjson =
     let parray  , rparray   = ptrampoline<JSON> ()
 
     let pobject , rpobject  = ptrampoline<JSON> ()
 
-    let pnull   = pstr "null" >>! NullValue
+    let pnull   = pstr "null" >>% NullValue
 
     let pboolean=
       pchoice
         [
-          pstr "true"   >>! BooleanValue true
-          pstr "false"  >>! BooleanValue false
+          pstr "true"   >>% BooleanValue true
+          pstr "false"  >>% BooleanValue false
         ]
 
     let pnumber =
       let psign : Parser<float->float>=
-        pskip '-' >>! fun d -> -d
+        pskip '-' >>% fun d -> -d
         >>? id
 
       let pfrac =
@@ -645,6 +645,8 @@ let parseAndPrint (p : Parser<'T>) (a : 'T -> string) s =
 // ----------------------------------------------------------------------------------------------
 [<EntryPoint>]
 let main argv =
+  Thread.CurrentThread.CurrentCulture <- CultureInfo.InvariantCulture
+
   let parse s = parseAndPrint pjson stringifyJSON s
 
   let rec loop () =
