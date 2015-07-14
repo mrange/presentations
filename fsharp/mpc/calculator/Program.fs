@@ -84,11 +84,9 @@ module CalculatorModule =
         | '/' -> Divide
         | op -> failwith "Unexpected op : %A" op
 
-
     let pexpr, prexpr     = createParserForwardedToRef<AST, unit> ()
     let ptoken ch         = skipChar ch .>> spaces
     let pcharToBinary ops = anyOf ops .>> spaces |>> fun ch -> fun l r -> Binary (l, charToOp ch, r)
-
     let pint              = pint32 |>> Integer
     let pvar              = many1Satisfy2L Char.IsLetter Char.IsLetterOrDigit "variable" |>> Variable
     let psub              = between (ptoken '(') (ptoken ')') pexpr
@@ -121,7 +119,18 @@ module JSONModule =
 
     let appStr (s : string) =
       ignore <| sb.Append '"'
-      ignore <| sb.Append s     // TODO: Add escaping
+      let e = s.Length - 1
+      for i = 0 to e do
+        ignore <| match s.[i] with
+        | '\"'  -> sb.Append @"\"""
+        | '\\'  -> sb.Append @"\\"
+        | '/'   -> sb.Append @"\/"
+        | '\b'  -> sb.Append @"\b"
+        | '\f'  -> sb.Append @"\f"
+        | '\n'  -> sb.Append @"\n"
+        | '\r'  -> sb.Append @"\r"
+        | '\t'  -> sb.Append @"\t"
+        | c     -> sb.Append c
       ignore <| sb.Append '"'
 
     let rec impl = function
@@ -159,43 +168,35 @@ module JSONModule =
     sb.ToString ()
 
   let pjson =
-
     let puint64 = puint64 <?> "digit"
 
     let parray  , rparray   = createParserForwardedToRef<JSON, unit> ()
 
     let pobject , rpobject  = createParserForwardedToRef<JSON, unit> ()
 
-    let pnull   = stringReturn "null" NullValue
+    let pnull               = stringReturn "null" NullValue
 
-    let pboolean= stringReturn "true" (BooleanValue true) <|> stringReturn "false" (BooleanValue false)
+    let pboolean            = stringReturn "true" (BooleanValue true) <|> stringReturn "false" (BooleanValue false)
 
-    let praw =
-      pipe3 getPosition puint64 getPosition (fun p ui n -> ui,(n.Index - p.Index))
+    let prawint             = pipe3 getPosition puint64 getPosition (fun p ui n -> ui,(n.Index - p.Index))
 
     let pnumber =
       let psign : Parser<float->float>=
         charReturn '-' (fun d -> -d)
         <|>% id
-
       let pfrac =
-        pipe2 (skipChar '.') praw (fun _ (ui,i) -> (float ui) * (pown 10.0 (int -i)))
+        pipe2 (skipChar '.') prawint (fun _ (ui,i) -> (float ui) * (pown 10.0 (int -i)))
         <|>% 0.0
-
       let pexp =
         pipe3 (anyOf "eE") psign puint64 (fun _ sign ui -> pown 10.0 (int (sign (double ui))))
         <|>% 1.0
-
       let pzero =
         charReturn '0' 0.0
-
       let pfull =
         pipe3 puint64 pfrac pexp (fun i f e -> (float i + f)*e)
-
       pipe2 psign (pzero <|> pfull) (fun s n -> NumberValue (s n))
 
     let prawstring =
-
       let phex =
         hex
         |>> fun ch ->
@@ -203,29 +204,27 @@ module JSONModule =
           elif ch >= 'A' && ch <= 'F' then int ch - int 'A' + 10
           elif ch >= 'a' && ch <= 'f' then int ch - int 'a' + 10
           else 0
-
-
       let pstring_token = skipChar '"'
       let pesc_token    = skipChar '\\'
       let pch   = satisfyL (function '"' | '\\' -> false | _ -> true) "char"
       let pech  =
-        pesc_token
-        >>. anyOf "\"\\/bfnrt"
-        |>> function
+        let psimple =
+          anyOf "\"\\/bfnrt"
+          |>> function
             | 'b' -> '\b'
             | 'f' -> '\f'
             | 'n' -> '\n'
             | 'r' -> '\r'
             | 't' -> '\t'
             | c   -> c
-
-      let puch  =
+        let punicode =
+          pipe5 (skipChar 'u') phex phex phex phex (fun _ v0 v1 v2 v3 ->
+            let ui = (v0 <<< 12) + (v1 <<< 8) + (v2 <<< 4) + v3
+            char ui
+            )
         pesc_token
-        >>. pipe4 phex phex phex phex (fun v0 v1 v2 v3 ->
-          let ui = (v0 <<< 12) + (v1 <<< 8) + (v2 <<< 4) + v3
-          char ui
-          )
-      let pstr  = manyChars (choice [pch; pech; puch])
+        >>. (psimple <|> punicode)
+      let pstr  = manyChars (choice [pch; pech])
       between pstring_token pstring_token pstr
 
     let pstring = prawstring |>> StringValue

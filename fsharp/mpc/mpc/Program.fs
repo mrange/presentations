@@ -468,7 +468,18 @@ module JSONModule =
 
     let appStr (s : string) =
       ignore <| sb.Append '"'
-      ignore <| sb.Append s     // TODO: Add escaping
+      let e = s.Length - 1
+      for i = 0 to e do
+        ignore <| match s.[i] with
+        | '\"'  -> sb.Append @"\"""
+        | '\\'  -> sb.Append @"\\"
+        | '/'   -> sb.Append @"\/"
+        | '\b'  -> sb.Append @"\b"
+        | '\f'  -> sb.Append @"\f"
+        | '\n'  -> sb.Append @"\n"
+        | '\r'  -> sb.Append @"\r"
+        | '\t'  -> sb.Append @"\t"
+        | c     -> sb.Append c
       ignore <| sb.Append '"'
 
     let rec impl = function
