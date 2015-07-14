@@ -180,7 +180,7 @@ module ParserModule =
         success (Some vp) perr ppos pmpos
       | _ ->
         success None perr pos pmpos
-  let inline (>>?) p v      = popt p >>= function None -> preturn v | Some vv -> preturn vv
+  let inline (<|>%) p v     = popt p >>= function None -> preturn v | Some vv -> preturn vv
 
   let pmany (p : Parser<'T>) : Parser<'T list> =
     fun (s,pos,epos) ->
@@ -213,7 +213,7 @@ module ParserModule =
 
   let pmanySepBy (p : Parser<'T>) (psep : Parser<_>) : Parser<'T list> =
     pmanySepBy1 p psep
-    >>? []
+    <|>% []
 
   let pchainl (p : Parser<'T>) (psep : Parser<'T -> 'T -> 'T>) : Parser<'T> =
     fun (s,pos,epos) ->
@@ -522,14 +522,14 @@ module JSONModule =
     let pnumber =
       let psign : Parser<float->float>=
         pskip '-' >>% fun d -> -d
-        >>? id
+        <|>% id
 
       let pfrac =
         parser {
           do!   pskip '.'
           let!  ui,i  = pnatural
           return (float ui) * (pown 10.0 -i)
-        } >>? 0.0
+        } <|>% 0.0
 
       let pexp =
         parser {
@@ -538,7 +538,7 @@ module JSONModule =
           let!  ui,_  = pnatural
           let scale   = sign (double ui)
           return pown 10.0 (int scale)
-        } >>? 1.0
+        } <|>% 1.0
 
       let pzero =
         pskip '0'
