@@ -86,6 +86,8 @@ module ParserModule =
 
   let pchar       = psatisfy (Expected "char")        <| fun _ -> true
   let pdigit      = psatisfy (Expected "digit")       Char.IsDigit
+  let phexdigit   = psatisfy (Expected "hexdigit")    <| fun ch ->
+    (Char.IsDigit ch) || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f')
   let pletter     = psatisfy (Expected "letter")      Char.IsLetter
   let pwhitespace = psatisfy (Expected "whitespace")  Char.IsWhiteSpace
 
@@ -410,7 +412,7 @@ module CalculatorModule =
       let bf  = binaryOperation bop
       bf lv rv
 
-  let asString e =
+  let stringifyExpression e =
     let sb = StringBuilder ()
     let rec impl = function
       | Value     i     ->
@@ -430,17 +432,17 @@ module CalculatorModule =
 
     sb.ToString ()
 
-  let pcalculator =
+  let pexpression =
     let ptk ch        = pskip ch .>> pwhitespaces
 
     let pexpr, rpexpr = ptrampoline<Expression> ()
     let pvalue        = puint32 |>> fun ui -> Value (int ui)
     let pvariable     = pmanyStr1 pletter |>> Variable
     let psubexpr      = pbetween (ptk '(') (ptk ')') pexpr
-    let pterm         = pchoice [pvalue; pvariable; psubexpr]
-    let pop0          = panyOf "*/%" |>> mapBinaryOperator .>> pwhitespaces
+    let pterm         = pchoice [pvalue; pvariable; psubexpr] .>> pwhitespaces
+    let pop0          = panyOf "*/%" |>> mapBinaryOperator    .>> pwhitespaces
     let plevel0       = pchainl pterm pop0
-    let pop1          = panyOf "+-" |>> mapBinaryOperator .>> pwhitespaces
+    let pop1          = panyOf "+-" |>> mapBinaryOperator     .>> pwhitespaces
     let plevel1       = pchainl plevel0 pop1
     rpexpr := plevel1
     pwhitespaces >>. plevel1 .>> peos
@@ -450,6 +452,7 @@ module CalculatorModule =
 // ----------------------------------------------------------------------------------------------
 module JSONModule =
   open ParserModule
+  open System.Text
 
   type JSON =
     | NullValue
@@ -458,6 +461,49 @@ module JSONModule =
     | StringValue   of string
     | ArrayValue    of JSON list
     | ObjectValue   of (string*JSON) list
+
+  let stringifyJSON json =
+    let sb = StringBuilder ()
+
+    let appStr (s : string) =
+      ignore <| sb.Append '"'
+      ignore <| sb.Append s     // TODO: Add escaping
+      ignore <| sb.Append '"'
+
+    let rec impl = function
+      | NullValue           ->
+        ignore <| sb.Append "null"
+      | BooleanValue true   ->
+        ignore <| sb.Append "true"
+      | BooleanValue false  ->
+        ignore <| sb.Append "false"
+      | NumberValue n  ->
+        ignore <| sb.Append n
+      | StringValue s       ->
+        appStr s
+      | ArrayValue vs       ->
+        ignore <| sb.Append '['
+        let mutable prepend = ""
+        for v in vs do
+          ignore <| sb.Append prepend
+          impl v
+          prepend <- ", "
+        ignore <| sb.Append ']'
+      | ObjectValue ms       ->
+        ignore <| sb.Append '{'
+        let mutable prepend = ""
+        for k,v in ms do
+          ignore <| sb.Append prepend
+          appStr k
+          ignore <| sb.Append ':'
+          impl v
+          prepend <- ", "
+        ignore <| sb.Append '}'
+
+    impl json
+
+    sb.ToString ()
+
 
   let pjson =
     let parray  , rparray   = ptrampoline<JSON> ()
@@ -475,11 +521,7 @@ module JSONModule =
 
     let pnumber =
       let psign : Parser<float->float>=
-        pchoice
-          [
-            pskip '-' >>! fun d -> -d
-            pskip '+' >>! id
-          ]
+        pskip '-' >>! fun d -> -d
         >>? id
 
       let pfrac =
@@ -498,18 +540,37 @@ module JSONModule =
           return pown 10.0 (int scale)
         } >>? 1.0
 
+      let pzero =
+        pskip '0'
+        |>> fun ch -> 0.0
+
+      let pfull =
+        parser {
+          let! i,_  = pnatural
+          let! f    = pfrac
+          let! e    = pexp
+
+          return (float i + f)*e
+        }
+
       parser {
-        let! sign = psign
-        let! i,_  = pnatural
-        let! f    = pfrac
-        let! e    = pexp
+        let! s  = psign
+        let! n  = pchoice [pzero; pfull]
 
-        let ur    = (float i + f)*e
-
-        return NumberValue (sign ur)
+        return NumberValue (s n)
       }
 
     let prawstring =
+
+      let phex =
+        phexdigit
+        |>> fun ch ->
+          if Char.IsDigit ch then int ch - int '0'
+          elif ch >= 'A' && ch <= 'F' then int ch - int 'A' + 10
+          elif ch >= 'a' && ch <= 'f' then int ch - int 'a' + 10
+          else 0
+
+
       let pstring_token = pskip '"'
       let pch   = psatisfy (Expected "char") (function '"' | '\\' -> false | _ -> true)
       let pech  =
@@ -526,12 +587,23 @@ module JSONModule =
             | _   -> c
           return r
         }
-      let pstr  = pmany (pchoice [pch; pech]) |>> (List.toArray >> fun cs -> String(cs))
+      let puch  =
+        parser {
+          do!   pskip '\\'
+          do!   pskip 'u'
+          let!  v0  = phex
+          let!  v1  = phex
+          let!  v2  = phex
+          let!  v3  = phex
+          let ui = (v0 <<< 12) + (v1 <<< 8) + (v2 <<< 4) + v3
+          return char ui
+        }
+      let pstr  = pmany (pchoice [pch; pech; puch]) |>> (List.toArray >> fun cs -> String(cs))
       pbetween pstring_token pstring_token pstr
 
     let pstring = prawstring |>> StringValue
 
-    let pvalue  = pchoice [pnull; pboolean; pdebug pnumber; pstring; parray; pobject] .>> pwhitespaces
+    let pvalue  = pchoice [pnull; pboolean; pnumber; pstring; parray; pobject] .>> pwhitespaces
 
     let ptk ch = pskip ch .>> pwhitespaces
 
@@ -542,8 +614,8 @@ module JSONModule =
     let pobj =
       let pmember =
         parser {
-          let!  name  = prawstring
-          do!   pskip ':'
+          let!  name  = prawstring .>> pwhitespaces
+          do!   ptk ':'
           let!  value = pvalue
 
           return name, value
@@ -562,18 +634,18 @@ open ParserModule
 open CalculatorModule
 open JSONModule
 // ----------------------------------------------------------------------------------------------
-let parseAndPrint (p : Parser<'T>) s=
+let parseAndPrint (p : Parser<'T>) (a : 'T -> string) s =
   printfn "Input: %s" s
   let res = parse p s
   match res with
   | Success (v,pos) ->
-    printfn "Success: Parsed %d characters as: %A" pos v
+    printfn "Success : Parsing stopped at pos: %d\nAST     : %A\nFriendly: %s" pos v (a v)
   | Failure (msg, pos) ->
-    printfn "Failed: Parsing stopped at pos: %d\n%s" pos msg
+    printfn "Failed  : Parsing stopped at pos: %d\n%s" pos msg
 // ----------------------------------------------------------------------------------------------
 [<EntryPoint>]
 let main argv =
-  let parse s = parseAndPrint pcalculator s
+  let parse s = parseAndPrint pjson stringifyJSON s
 
   let rec loop () =
     printfn "-- \nEnter expression to be parsed"
