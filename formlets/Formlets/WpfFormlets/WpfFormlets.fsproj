@@ -53,6 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="FormletLibrary.fs" />
+    <Compile Include="FormletDemo.fs" />
+    <Compile Include="FormletSample.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
