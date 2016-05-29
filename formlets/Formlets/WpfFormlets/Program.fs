@@ -71,8 +71,8 @@ open System
 [<STAThread>]
 [<EntryPoint>]
 let main argv =
-  FormletWindow.start FormletSample.customerFormlet
+//  FormletWindow.start FormletSample.customerFormlet
 //  FormletWindow.start FormletListDemo.demoFormlet
 //  FormletWindow.start <| FormletBuzy.demoFormlet ()
-//  FormletWindow.start FormletDemo.demoFormlet
+  FormletWindow.start FormletDemo.demoFormlet
   0
