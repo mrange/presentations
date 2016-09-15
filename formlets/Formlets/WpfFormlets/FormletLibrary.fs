@@ -202,6 +202,10 @@ module Formlet =
     Formlet <| fun (fc, p, ft) ->
       success v FormletTree.Empty
 
+  let kleisli (tf : 'A -> Formlet<'T>) (uf : 'T -> Formlet<'U>) : 'A -> Formlet<'U> =
+    fun a ->
+      bind (tf a) uf
+
   // -------------------------------------------------------------------------
 
   let apply (t : Formlet<'A -> 'B>) (u : Formlet<'A>) : Formlet<'B> =
@@ -301,10 +305,11 @@ module Formlet =
 let formlet = Formlet.FormletBuilder ()
 
 module Infixes =
-  let inline (<&>) t u  = Formlet.apply t u
-  let inline (>>=) t uf = Formlet.bind  t uf
-  let inline (|>>) t m  = Formlet.map   m t
-  let inline (<*>) t u  = Formlet.pair  t u
+  let inline (<&>) t u    = Formlet.apply   t   u
+  let inline (>>=) t uf   = Formlet.bind    t   uf
+  let inline (>=>) tf uf  = Formlet.kleisli tf  uf
+  let inline (|>>) t m    = Formlet.map     m   t
+  let inline (<*>) t u    = Formlet.pair    t   u
 
 // Ensure module contains various Formlets used for validation
 [<RequireQualifiedAccess>]
