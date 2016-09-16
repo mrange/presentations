@@ -1,8 +1,9 @@
 ﻿type QueryContext =
   {
-    ProdDataXml : string
-    Gpp3Data    : string
-    Errors      : string []
+    ProdDataXml   : string
+    SysDataParam  : string
+    Gpp3Data      : string
+    Errors        : string []
   }
 
 type AttributeQuery<'T> = QueryContext -> 'T
