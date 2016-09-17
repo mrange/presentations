@@ -15,7 +15,7 @@
 
   static class AttributeQuery
   {
-    public static Func<U> AndThen<T, U> (this Func<T> t, Func<T, U> u)
+    public static Func<U> Then<T, U> (this Func<T> t, Func<T, U> u)
     {
       return () => u(t ());
     }
@@ -116,10 +116,10 @@ namespace AttributeQueryCs.Original
             , A ("capabilityIdentity"       , Scalar                                                , Iwd(2))
             , A ("txPortMaximumOutputPower" , Power (dBm0_1 /* IWD */ , dBm0_1  /* not always! */)  , ProdDataXml ("/board/powerClassUsage"))
             , A ("txPortMaximumPar"         , Power (dBm0_1 /* IWD */ , dBm0_1  /* sysDataParam */) , SysDataParam ("capMaxPar"))
-            , A ("txOperationBandLowEdge"   , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).AndThen (Select (0))) /* select "DL_f_min" */
-            , A ("txOperationBandHighEdge"  , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).AndThen (Select (1))) /* select "DL_f_max" */
-            , A ("rxOperationBandLowEdge"   , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).AndThen (Select (2))) /* select "UL_f_min" */
-            , A ("rxOperationBandHighEdge"  , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).AndThen (Select (3))) /* select "UL_f_max" */
+            , A ("txOperationBandLowEdge"   , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).Then (Select (0))) /* select "DL_f_min" */
+            , A ("txOperationBandHighEdge"  , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).Then (Select (1))) /* select "DL_f_max" */
+            , A ("rxOperationBandLowEdge"   , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).Then (Select (2))) /* select "UL_f_min" */
+            , A ("rxOperationBandHighEdge"  , Frequency (kHz /* IWD */, kHz /* gpp3 */)             , Gpp3 ("bandLimits", freqClassUsage).Then (Select (3))) /* select "UL_f_max" */
             , A ("duplexMode"               , Scalar                                                , SysDataParam ("capabilityDuplexMode"))
             , A ("txMaximumBandwidth"       , Frequency (kHz /* IWD */, kHz /* match IWD range */)  , SysDataParam ("capabilityDlBw")) /* Observed values in sysDataParam 10000-75000*/
             , A ("rxMaximumBandwidth"       , Frequency (kHz /* IWD */, kHz /* match IWD range */)  , SysDataParam ("capabilityUlBw")) /* Observed values in sysDataParam 10000-75000*/
