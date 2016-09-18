@@ -276,11 +276,6 @@ module Formlet =
         // TODO: Handle exception states
         success None FormletTree.Empty
 
-  let yield_ (tf : unit -> Formlet<'T>) : Formlet<'T> =
-    Formlet <| fun (fc, p, ft) ->
-      let t = tf ()
-      t.Run (fc, p, ft)
-
   let inline zero () : Formlet<'T> =
     Formlet <| fun (fc, p, ft) ->
       success LanguagePrimitives.GenericZero<'T> FormletTree.Empty
@@ -299,7 +294,6 @@ module Formlet =
     member inline x.Bind       (t, uf)   = bind        t uf
     member inline x.Return     v         = return_     v
     member inline x.ReturnFrom t         = returnFrom  t
-    member inline x.Yield      tf        = yield_ tf
     member inline x.Zero       ()        = zero ()
 
 let formlet = Formlet.FormletBuilder ()
