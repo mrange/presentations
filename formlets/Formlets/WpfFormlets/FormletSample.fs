@@ -77,32 +77,32 @@ let customerFormlet  =
 
   // A "simple" formlet collect address info
   let address l =
-    Formlet.return_ Address.New
-    <&> any       "C/O"
-    <&> notEmpty  "Street"
-    <&> notEmpty  "Zip"
-    <&> notEmpty  "City"
-    <&> any       "County"
-    <&> notEmpty  "Country"
+    Formlet.pure_ Address.New
+    <*> any       "C/O"
+    <*> notEmpty  "Street"
+    <*> notEmpty  "Zip"
+    <*> notEmpty  "City"
+    <*> any       "County"
+    <*> notEmpty  "Country"
     |>  EnhanceWith.group l
 
   let invoiceAddress  = address "Invoice Address"
 
   // A "simple" formlet collect person info
   let person =
-    Formlet.return_ Person.New
-    <&> notEmpty "First name"
-    <&> notEmpty "Last name"
-    <&> socialNo
+    Formlet.pure_ Person.New
+    <*> notEmpty "First name"
+    <*> notEmpty "Last name"
+    <*> socialNo
     |>> CustomerKind.Person
     |>  EnhanceWith.group "Person"
 
   // A "simple" formlet collect company info
   let company =
-    Formlet.return_ Company.New
-    <&> notEmpty "Name"
-    <&> companyNo
-    <&> taxNo
+    Formlet.pure_ Company.New
+    <*> notEmpty "Name"
+    <*> companyNo
+    <*> taxNo
     |>> CustomerKind.Company
     |>  EnhanceWith.group "Company"
 

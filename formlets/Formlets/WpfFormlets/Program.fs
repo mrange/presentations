@@ -32,13 +32,13 @@ module FormletListDemo =
   let l i = Input.text "" |> Ensure.notEmpty |> EnhanceWith.errorVisualizer |> EnhanceWith.label i
 
   let f =
-    Formlet.return_ (fun co s z c o y -> co, s, z, c, o , y)
-    <&> l "C/O"
-    <&> l "Street"
-    <&> l "Zip"
-    <&> l "City"
-    <&> l "County"
-    <&> l "Country"
+    Formlet.pure_ (fun co s z c o y -> co, s, z, c, o , y)
+    <*> l "C/O"
+    <*> l "Street"
+    <*> l "Zip"
+    <*> l "City"
+    <*> l "County"
+    <*> l "Country"
 
 
   let demoFormlet =
@@ -71,8 +71,8 @@ open System
 [<STAThread>]
 [<EntryPoint>]
 let main argv =
-//  FormletWindow.start FormletSample.customerFormlet
+  FormletWindow.start FormletSample.customerFormlet
 //  FormletWindow.start FormletListDemo.demoFormlet
 //  FormletWindow.start <| FormletBuzy.demoFormlet ()
-  FormletWindow.start FormletDemo.demoFormlet
+//  FormletWindow.start FormletDemo.demoFormlet
   0

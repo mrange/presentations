@@ -186,6 +186,8 @@ type Formlet<'T> =
 module Formlet =
   open System
 
+  // Monad
+
   // The all important bind operation
   //  Note that BuildUp returns a best effort value of 'T that will be used
   //  to call uf with.
@@ -202,11 +204,17 @@ module Formlet =
     Formlet <| fun (fc, p, ft) ->
       success v FormletTree.Empty
 
+  // Arrow
+
+  let arr (f : 'T -> 'U) : 'T -> Formlet<'U> = fun v -> return_ (f v)
+
   let kleisli (tf : 'A -> Formlet<'T>) (uf : 'T -> Formlet<'U>) : 'A -> Formlet<'U> =
     fun a ->
       bind (tf a) uf
 
-  // -------------------------------------------------------------------------
+  // Applicative
+
+  let pure_ v = return_ v
 
   let apply (t : Formlet<'A -> 'B>) (u : Formlet<'A>) : Formlet<'B> =
     Formlet <| fun (fc, p, ft) ->
@@ -214,6 +222,15 @@ module Formlet =
       let tfr       = t.Run (fc, p, tft)
       let ufr       = u.Run (fc, p, uft)
       (tfr.KeepRight ufr).ChangeValue (tfr.Value ufr.Value)
+
+  // Functor
+
+  let map (m : 'T -> 'U) (t : Formlet<'T>) : Formlet<'U> =
+    Formlet <| fun (fc, p, ft) ->
+      let tfr = t.Run (fc, p, ft)
+      tfr.ChangeValue (m tfr.Value)
+
+  // -------------------------------------------------------------------------
 
   let bindTask (t : Task<'T>) (ud : Formlet<'U>) (uf : 'T -> Formlet<'U>) : Formlet<'U> =
     Formlet <| fun (fc, p, ft) ->
@@ -246,11 +263,6 @@ module Formlet =
             ncft
         let ncft = loop 0 CollectFailureTree.Empty
         result nvs ncft (FormletTree.Many nfts)
-
-  let map (m : 'T -> 'U) (t : Formlet<'T>) : Formlet<'U> =
-    Formlet <| fun (fc, p, ft) ->
-      let tfr = t.Run (fc, p, ft)
-      tfr.ChangeValue (m tfr.Value)
 
   let pair (t : Formlet<'T>) (u : Formlet<'U>) : Formlet<'T*'U> =
     Formlet <| fun (fc, p, ft) ->
@@ -299,11 +311,11 @@ module Formlet =
 let formlet = Formlet.FormletBuilder ()
 
 module Infixes =
-  let inline (<&>) t u    = Formlet.apply   t   u
+  let inline (<*>) t u    = Formlet.apply   t   u
   let inline (>>=) t uf   = Formlet.bind    t   uf
   let inline (>=>) tf uf  = Formlet.kleisli tf  uf
   let inline (|>>) t m    = Formlet.map     m   t
-  let inline (<*>) t u    = Formlet.pair    t   u
+//  let inline (<*>) t u    = Formlet.pair    t   u
 
 // Ensure module contains various Formlets used for validation
 [<RequireQualifiedAccess>]
