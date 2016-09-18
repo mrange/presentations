@@ -1,10 +1,20 @@
-﻿type QueryContext =
+﻿type ProductData() =
+  member x.Get (path : string) = "TODO:"
+
+type SysData() =
+  member x.Get (path : string) = "TODO:"
+
+type Gpp3Data() =
+  member x.Get (path : string) (key : string) = "TODO:"
+
+type QueryContext =
   {
-    ProdDataXml   : string
-    SysDataParam  : string
-    Gpp3Data      : string
+    ProductData   : ProductData
+    SysData       : SysData
+    Gpp3Data      : Gpp3Data
     Errors        : string []
   }
+  static member New pd sd gd : QueryContext = { ProductData = pd; SysData = sd; Gpp3Data = gd; Errors = [||] }
 
 type AttributeQuery<'T> = QueryContext -> 'T
 
@@ -94,7 +104,7 @@ let capabilityInstructions =
     "CRBS_TRS_CAP_CARDINALITY_SUPPORT",
     [|
       "capabilityIdentity"         , Scalar                                                 , iwd 1
-      "numberOfDevices"            , Scalar                                                 , iwd 0  (* IWD: "Number of static devices" *)
+      "numberOfDevices"            , Scalar                                                 , iwd 0                                             (* IWD: "Number of static devices" *)
     |]
     "CRBS_TRS_CAP_RF_CHAR_SUPPORT",
     [|
@@ -106,8 +116,8 @@ let capabilityInstructions =
       "txOperationBandHighEdge"    , BandHigh  (kHz (* IWD *), kHz (* gpp3 *))              , freqClassUsage >>= gpp3 "bandLimits" >>= select 1 (* select "DL_f_max" *)
       "rxOperationBandLowEdge"     , BandLow   (kHz (* IWD *), kHz (* gpp3 *))              , freqClassUsage >>= gpp3 "bandLimits" >>= select 2 (* select "UL_f_min" *)
       "rxOperationBandHighEdge"    , BandHigh  (kHz (* IWD *), kHz (* gpp3 *))              , freqClassUsage >>= gpp3 "bandLimits" >>= select 3 (* select "UL_f_max" *)
-      "txMaximumBandwidth"         , BandWidth (kHz (* IWD *), kHz (* match IWD range *))   , sysDataParam "capabilityDlBw"                 (* Observed values in sysDataParam 10000-75000*)
-      "rxMaximumBandwidth"         , BandWidth (kHz (* IWD *), kHz (* match IWD range *))   , sysDataParam "capabilityUlBw"                 (* Observed values in sysDataParam 10000-75000*)
+      "txMaximumBandwidth"         , BandWidth (kHz (* IWD *), kHz (* match IWD range *))   , sysDataParam "capabilityDlBw"                     (* Observed values in sysDataParam 10000-75000*)
+      "rxMaximumBandwidth"         , BandWidth (kHz (* IWD *), kHz (* match IWD range *))   , sysDataParam "capabilityUlBw"                     (* Observed values in sysDataParam 10000-75000*)
 //      "rxMaximumGainArpToRuInput"  , dBm0_1 (* IWD *)          , __  (*?range -500to500?*) , subtract_str(sysDataParam("ulGainSetting").then(split(select(2))), sysDataParam("ulGainSetting").then(split(select(1)))) } (* GAIN_UL_HIGH_EDGE - GAIN_UL_LOW_EDGE. Observed value outside IWD range *)
     |]
   |]

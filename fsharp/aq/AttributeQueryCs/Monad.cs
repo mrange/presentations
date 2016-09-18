@@ -2,17 +2,6 @@
 {
   using Common;
 
-  using System.Collections.Generic;
-  using System.Xml;
-
-  class QueryContext
-  {
-    public readonly XmlDocument   ProdDataXml ;
-    public readonly string[]      SysDataParam;
-    public readonly string[]      Gpp3Data    ;
-    public readonly List<string>  Errors      ;
-  }
-
   delegate T AttributeQuery<T> (QueryContext ctx);
   delegate AttributeQuery<U> AttributeQueryKleisli<T, U> (T v);
 
@@ -40,7 +29,7 @@
 
     public static AttributeQuery<string> Gpp3 (string path, string key)
     {
-      return ctx => "TODO:";
+      return ctx => ctx.Gpp3Data.Get (path, key);
     }
 
     public static AttributeQueryKleisli<string, string> Gpp3 (string path)
@@ -50,17 +39,17 @@
 
     public static AttributeQuery<string> ProdDataXml (string path)
     {
-      return ctx => "TODO:";
+      return ctx => ctx.ProductData.Get (path);
     }
 
     public static AttributeQuery<string> SysDataParam (string path)
     {
-      return ctx => "TODO:";
+      return ctx =>  ctx.SysData.Get (path);
     }
 
     public static AttributeQuery<string> Select (int idx, string v)
     {
-      return ctx => "TODO:";
+      return ctx => v.Split (',')[idx];
     }
 
     public static AttributeQueryKleisli<string, string> Select (int idx)

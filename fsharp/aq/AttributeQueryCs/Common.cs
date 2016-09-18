@@ -1,5 +1,43 @@
 ﻿namespace AttributeQueryCs.Common
 {
+  using System;
+  using System.Collections.Generic;
+
+  sealed class ProductData
+  {
+    public string Get (string key)
+    {
+      return "TODO:";
+    }
+  }
+
+  sealed class SysData
+  {
+    public string Get (string key)
+    {
+      return "TODO:";
+    }
+  }
+
+  sealed class Gpp3Data
+  {
+    public string Get (string path, string key)
+    {
+      return "TODO:";
+    }
+  }
+
+  sealed class QueryContext
+  {
+    public ProductData    ProductData   = new ProductData ();
+    public SysData        SysData       = new SysData     ();
+    public Gpp3Data       Gpp3Data      = new Gpp3Data    ();
+    public List<string>   Errors        = new List<string>();
+
+    [ThreadStatic]
+    public static QueryContext Instance = new QueryContext();
+  }
+
   interface IUnitConverter
   {
     string UnitName { get; }

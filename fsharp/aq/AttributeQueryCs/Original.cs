@@ -1,17 +1,7 @@
 ﻿namespace AttributeQueryCs.Original
 {
   using System;
-  using System.Xml;
-  using System.Collections.Generic;
   using Common;
-
-  static class QueryContext
-  {
-    public static XmlDocument   ProdDataXml ;
-    public static string[]      SysDataParam;
-    public static string[]      Gpp3Data    ;
-    public static List<string>  Errors      ;
-  }
 
   static class AttributeQuery
   {
@@ -27,27 +17,27 @@
 
     public static Func<string> Gpp3 (string path, string key)
     {
-      return () => "TODO:";
+      return () => QueryContext.Instance.Gpp3Data.Get (path, key);
     }
 
     public static Func<string> Gpp3 (string path, Func<string> key)
     {
-      return () => "TODO:";
+      return () => QueryContext.Instance.Gpp3Data.Get (path, key ());
     }
 
     public static Func<string> ProdDataXml (string path)
     {
-      return () => "TODO:";
+      return () => QueryContext.Instance.ProductData.Get (path);
     }
 
     public static Func<string> SysDataParam (string path)
     {
-      return () => "TODO:";
+      return () => QueryContext.Instance.SysData.Get (path);
     }
 
     public static Func<string, string> Select (int idx)
     {
-      return v => v;
+      return v => v.Split (',')[idx];
     }
   }
 
