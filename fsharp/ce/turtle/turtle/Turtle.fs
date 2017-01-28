@@ -41,25 +41,26 @@ module Turtle =
           member x.Value = v
           member x.State = s
 
-          static member New v s = Result<'T> (v, s)
+          static member inline New v s = Result<'T> (v, s)
         end
 
     type Movement<'T> = State -> Result<'T>
 
-    let Return v                                            : Movement<'T>      = fun s ->   Result<_>.New v s
+    // Monad
 
-    let Zero ()                                             : Movement<unit>    = fun s ->   Result<_>.New () s
+    let Return v                                            : Movement<'T>      = fun s ->   Result<_>.New v s
 
     let Bind (l : Movement<'T>) (r : 'T -> Movement<'U>)    : Movement<'U> =
         fun s ->
             let m = l s
             (r m.Value) m.State
 
-
     let Combine (l : Movement<unit>) (r : Movement<'U>)     : Movement<'U> =
         fun s ->
             let m = l s
             r m.State
+
+    let Zero ()                                             : Movement<unit>    = fun s ->   Result<_>.New () s
 
     let For (seq : seq<'T>) (r : 'T -> Movement<unit>)      : Movement<unit> =
         fun s ->
@@ -87,12 +88,10 @@ module Turtle =
             let ss = State.UnsafeNew c s.Width s.Position s.Direction s.DrawLine
             Result<_>.New () ss
 
-
     let Width (w : float32)                                 : Movement<unit> =
         fun s ->
             let ss = State.UnsafeNew s.Color w s.Position s.Direction s.DrawLine
             Result<_>.New () ss
-
 
     let Turn (a : float32)                                  : Movement<unit> =
         fun s ->
@@ -101,14 +100,12 @@ module Turtle =
             let ss = State.UnsafeNew s.Color s.Width s.Position d s.DrawLine
             Result<_>.New () ss
 
-
     let Forward (v : float32)                               : Movement<unit> =
         fun s ->
             let p = s.Position + v*s.Direction
             let ss = State.UnsafeNew s.Color s.Width p s.Direction s.DrawLine
             ss.DrawLine s.Color s.Width s.Position p
             Result<_>.New () ss
-
 
     let Execute (c : Color) (w : float32) (p : Vector2) (d : Vector2) (dl : DrawLine) (t : Movement<'T>) =
         let s = State.New c w p d dl
@@ -130,4 +127,5 @@ module Turtle =
         let inline ( >>= ) l r = Bind l r
         let inline ( >>. ) l r = Combine l r
 
+    // This allows us to compose turtles using Computation Expressions: turtle { ... }
     let turtle = TurtleBuilder ()
