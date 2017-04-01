@@ -21,17 +21,25 @@ module Tests =
 
   type Properties () =
 
-    // §1 - Lookup after set shall succeed
-    //  §1.1 - The tree shall contain all distinct key/values
-    // §2 - Lookup after unset shall fail
+    // §1 - The map is immutable
+    // §2 - Lookup after set shall succeed
+    //  §2.1 - The tree shall contain all distinct key/values
+    // §3 - Lookup after unset shall fail
 
-    // §3 - Parent key is greater than left child, smaller than right child
+    // §4 - Parent key is greater than left child, smaller than right child
 
-    // §4 - No Red Node has a Red child
-    // §5 - Every path from the Root to a Leaf contains the same number of Black nodes
-    // §6 - §4 + §5 => Tree depth at most 2[log2 (n + 1)]
+    // §5 - No Red Node has a Red child
+    // §6 - Every path from the Root to a Leaf contains the same number of Black nodes
+    // §7 - §5 + §6 => Tree depth at most 2[log2 (n + 1)]
 
-    static member ``§1 - Lookup after set shall succeed`` (k : Key) (v : int) (vs : (Key*int) []) =
+    static member ``§1 - The map is immutable`` (k : Key) (v : int) (vs : (Key*int) []) =
+      let e     = fromArray vs
+      let a     = fromArray vs
+      let _     = set k v a
+
+      e = a
+
+    static member ``§2 - Lookup after set shall succeed`` (k : Key) (v : int) (vs : (Key*int) []) =
       let tree  = fromArray vs
       let tree  = set k v tree
 
@@ -39,7 +47,7 @@ module Tests =
       | Some tv -> tv = v
       | None    -> false
 
-    static member ``§1.1 - The tree shall contain all distinct key/values`` (vs : (Key*int) []) =
+    static member ``§2.1 - The tree shall contain all distinct key/values`` (vs : (Key*int) []) =
       let vs    = vs |> Array.distinctBy fst
       let tree  = fromArray vs
 
@@ -54,7 +62,7 @@ module Tests =
 
       loop 0
 
-    static member ``§3 - Parent node is greater than left child, smaller than right child`` (vs : (Key*int) []) =
+    static member ``§4 - Parent node is greater than left child, smaller than right child`` (vs : (Key*int) []) =
       let tree  = fromArray vs
 
       let rec loop t =
@@ -73,7 +81,7 @@ module Tests =
 
       loop tree
 
-    static member ``§4 - No Red Node has a Red child`` (vs : (Key*int) []) =
+    static member ``§5 - No Red Node has a Red child`` (vs : (Key*int) []) =
       let tree = fromArray vs
 
       let rec test t =
@@ -85,7 +93,7 @@ module Tests =
 
       test tree
 
-    static member ``§5 - Every path from the Root to a Leaf contains the same number of Black nodes`` (vs : (Key*int) []) =
+    static member ``§6 - Every path from the Root to a Leaf contains the same number of Black nodes`` (vs : (Key*int) []) =
       let tree = fromArray vs
 
       let rec test bns t =
@@ -105,7 +113,7 @@ module Tests =
 
       test 0 tree > -1
 
-    static member ``§6 - §4 + §5 => Tree depth at most 2[log2 (n + 1)]`` (vs : (Key*int) []) =
+    static member ``§7 - §5 + §6 => Tree depth at most 2[log2 (n + 1)]`` (vs : (Key*int) []) =
       let vs    = vs |> Array.distinctBy fst
       let tree  = fromArray vs
       let depth = depth     tree
