@@ -51,16 +51,11 @@ module Tests =
       let vs    = vs |> Array.distinctBy fst
       let tree  = fromArray vs
 
-      let rec loop i =
-        if i < vs.Length then
-          let k, v = vs.[i]
-          match lookup k tree with
-          | Some tv -> tv = v && loop (i + 1)
-          | None    -> false
-        else
-          true
-
-      loop 0
+      vs |> Array.forall (fun (k, v) ->
+        match lookup k tree with
+        | Some mv -> mv = v
+        | None    -> false
+        )
 
     static member ``§4 - Parent node is greater than left child, smaller than right child`` (vs : (Key*int) []) =
       let tree  = fromArray vs
