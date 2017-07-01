@@ -22,12 +22,12 @@
 
 #pragma warning(disable : 4459)
 
-#define MANDEL_INDEPENDENT(i)                                         \
-  xy[i] = _mm256_mul_ps (x[i], y[i]);                           \
-  x2[i] = _mm256_mul_ps (x[i], x[i]);                           \
+#define MANDEL_INDEPENDENT(i)                                     \
+  xy[i] = _mm256_mul_ps (x[i], y[i]);                             \
+  x2[i] = _mm256_mul_ps (x[i], x[i]);                             \
   y2[i] = _mm256_mul_ps (y[i], y[i]);
-#define MANDEL_DEPENDENT(i)                                           \
-  y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]); \
+#define MANDEL_DEPENDENT(i)                                       \
+  y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]);   \
   x[i]  = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);
 
 #define MANDEL_ITERATION()  \
