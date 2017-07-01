@@ -16,11 +16,9 @@
 
 #include "stdafx.h"
 
-#include <cstddef>
-#include <cstdio>
-#include <chrono>
 #include <vector>
-#include <tuple>
+
+#include "../common.hpp"
 
 namespace
 {
@@ -29,16 +27,6 @@ namespace
   constexpr auto    max_x    =  0.5 ;
   constexpr auto    max_y    =  1.0 ;
   constexpr auto    max_iter =  50U ;
-
-  template<typename T>
-  auto time_it (T a)
-  {
-    auto before = std::chrono::high_resolution_clock::now ();
-    auto result = a ();
-    auto after  = std::chrono::high_resolution_clock::now ();
-    auto diff   = std::chrono::duration_cast<std::chrono::milliseconds> (after - before).count ();
-    return std::make_tuple (diff, std::move (result));
-  }
 
   auto mandelbrot (double cx, double cy)
   {
@@ -54,8 +42,8 @@ namespace
       {
         return iter;
       }
-      x = x2 - y2 + cx  ;
       y = 2*x*y   + cy  ;
+      x = x2 - y2 + cx  ;
     }
 
     return iter;
@@ -94,41 +82,6 @@ namespace
 
     return set;
   }
-
-  template<typename TGenerator>
-  int do_main (char const * pbm_name, int argc, char const * argv[], TGenerator && generator)
-  {
-    auto dim  = [argc, argv] ()
-    {
-      auto dim = argc > 1 ? atoi (argv[1]) : 0;
-      return dim > 0 ? dim : 200;
-    } ();
-
-    if (dim % 8 != 0)
-    {
-      std::printf ("Dimension must be modulo 8\n");
-      return 999;
-    }
-
-    std::printf ("Generating mandelbrot set %dx%d(%d)\n", dim, dim, max_iter);
-
-    auto res  = time_it ([dim, &generator] { return generator(dim); });
-
-    auto ms   = std::get<0> (res);
-    auto& set = std::get<1> (res);
-
-    std::printf ("  it took %lld ms\n", ms);
-
-    auto file = std::fopen (pbm_name, "wb");
-
-    std::fprintf (file, "P4\n%d %d\n", dim, dim);
-    std::fwrite (&set.front (), 1, set.size (), file);
-
-    std::fclose (file);
-
-    return 0;
-  }
-
 }
 
 int main (int argc, char const * argv[])
