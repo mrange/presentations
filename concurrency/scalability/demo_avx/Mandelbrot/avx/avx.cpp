@@ -20,27 +20,37 @@
 
 #include "../common.hpp"
 
+#pragma warning(disable : 4459)
+
 namespace
 {
-  auto mandelbrot (double cx, double cy)
+  auto mandelbrot (__m256 cx, __m256 cy)
   {
-    auto x    = cx      ;
-    auto y    = cy      ;
-    auto iter = max_iter;
+    auto x        = cx;
+    auto y        = cy;
 
-    for (; iter > 0; --iter)
+    int cmp_mask  = 0 ;
+
+    for (auto iter = max_iter; iter > 0; --iter)
     {
-      auto x2 = x*x;
-      auto y2 = y*y;
-      if (x2 + y2 > 4)
+      auto x2         = _mm256_mul_ps  (x, x);
+      auto y2         = _mm256_mul_ps  (y, y);
+      auto r2         = _mm256_add_ps  (x2, y2);
+      auto _4         = _mm256_set1_ps (4.0);
+      auto cmp        = _mm256_cmp_ps  (r2, _4, _CMP_LT_OQ);
+      cmp_mask        = _mm256_movemask_ps (cmp);
+
+      if (!cmp_mask)
       {
-        return iter;
+        return 0;
       }
-      y = 2*x*y   + cy  ;
-      x = x2 - y2 + cx  ;
+
+      auto xy       = _mm256_mul_ps (x, y);
+      y             = _mm256_add_ps (_mm256_add_ps (xy, xy) , cy);
+      x             = _mm256_add_ps (_mm256_sub_ps (x2, y2) , cx);
     }
 
-    return iter;
+    return cmp_mask;
   }
 
   std::vector<std::uint8_t> compute_set (std::size_t const dim)
@@ -49,28 +59,48 @@ namespace
 
     auto width = (dim - 1) / 8 + 1;
 
-    set.reserve (width*dim);
+    set.resize (width*dim);
+
+    auto pset   = &set.front ();
+
+    auto max_x  = static_cast<float> (::max_x);
+    auto min_x  = static_cast<float> (::min_x);
+
+    auto max_y  = static_cast<float> (::max_y);
+    auto min_y  = static_cast<float> (::min_y);
 
     auto scalex = (max_x - min_x) / dim;
     auto scaley = (max_y - min_y) / dim;
 
-    for (auto y = 0U; y < dim; ++y)
+    auto incx   = _mm256_set_ps (
+        0*scalex
+      , 1*scalex
+      , 2*scalex
+      , 3*scalex
+      , 4*scalex
+      , 5*scalex
+      , 6*scalex
+      , 7*scalex
+      );
+
+    auto sdim   = static_cast<int> (dim);
+
+    #pragma omp parallel for schedule(guided)
+    for (auto sy = 0; sy < sdim; ++sy)
     {
+      auto y        = static_cast<std::size_t> (sy);
+      auto yoffset  = y*width;
+
       for (auto w = 0U; w < width; ++w)
       {
-        std::uint8_t bits = 0;
-        for (auto bit = 0U; bit < 8U; ++bit)
-        {
-          auto x = w*8 + bit;
+        auto x = w << 3;
 
-          auto i = mandelbrot (scalex*x + min_x, scaley*y + min_y);
+        __m256 cx = _mm256_add_ps  (_mm256_set1_ps (scalex*x + min_x), incx);
+        __m256 cy = _mm256_set1_ps (scaley*y + min_y);
 
-          if (i == 0)
-          {
-            bits |= 1 << (7U - bit);
-          }
-        }
-        set.push_back (bits);
+        auto bits = mandelbrot (cx, cy);
+
+        pset[yoffset + w] = static_cast<std::uint8_t> (bits);
       }
     }
 
@@ -80,6 +110,6 @@ namespace
 
 int main (int argc, char const * argv[])
 {
-  return do_main ("mandelbrot_reference.pbm", argc, argv, &compute_set);
+  return do_main ("mandelbrot_avx.pbm", argc, argv, &compute_set);
 }
 
