@@ -53,15 +53,11 @@ namespace
     return cmp_mask;
   }
 
-  std::vector<std::uint8_t> compute_set (std::size_t const dim)
+  bitmap::uptr compute_set (std::size_t const dim)
   {
-    std::vector<std::uint8_t> set;
-
-    auto width = (dim - 1) / 8 + 1;
-
-    set.resize (width*dim);
-
-    auto pset   = &set.front ();
+    auto set    = create_bitmap (dim, dim);
+    auto width  = set->w;
+    auto pset   = set->bits ();
 
     auto max_x  = static_cast<float> (::max_x);
     auto min_x  = static_cast<float> (::min_x);

@@ -47,19 +47,18 @@ namespace
     return iter;
   }
 
-  std::vector<std::uint8_t> compute_set (std::size_t const dim)
+  bitmap::uptr compute_set (std::size_t const dim)
   {
-    std::vector<std::uint8_t> set;
-
-    auto width = (dim - 1) / 8 + 1;
-
-    set.reserve (width*dim);
+    auto set  = create_bitmap (dim, dim);
+    auto width= set->w;
+    auto pset = set->bits ();
 
     auto scalex = (max_x - min_x) / dim;
     auto scaley = (max_y - min_y) / dim;
 
     for (auto y = 0U; y < dim; ++y)
     {
+      auto yoffset = y*width;
       for (auto w = 0U; w < width; ++w)
       {
         std::uint8_t bits = 0;
@@ -74,7 +73,7 @@ namespace
             bits |= 1 << (7U - bit);
           }
         }
-        set.push_back (bits);
+        pset[yoffset + w] = bits;
       }
     }
 
