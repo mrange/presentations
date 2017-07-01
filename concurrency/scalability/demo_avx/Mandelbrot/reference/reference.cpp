@@ -76,7 +76,7 @@ namespace
     {
       for (auto w = 0U; w < width; ++w)
       {
-        auto bits = 0U;
+        std::uint8_t bits = 0;
         for (auto bit = 0U; bit < 8U; ++bit)
         {
           auto x = w*8 + bit;
