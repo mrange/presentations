@@ -22,6 +22,8 @@
 
 namespace
 {
+  std::size_t iterations = 0;
+
   auto mandelbrot (double cx, double cy)
   {
     auto x    = cx      ;
@@ -34,12 +36,14 @@ namespace
       auto y2 = y*y;
       if (x2 + y2 > 4)
       {
+        iterations += max_iter - iter + 1;
         return iter;
       }
       y = 2*x*y   + cy  ;
       x = x2 - y2 + cx  ;
     }
 
+    iterations += max_iter;
     return iter;
   }
 
@@ -80,6 +84,10 @@ namespace
 
 int main (int argc, char const * argv[])
 {
-  return do_main ("mandelbrot_reference.pbm", argc, argv, &compute_set);
+  auto result = do_main ("mandelbrot_reference.pbm", argc, argv, &compute_set);
+
+  std::printf ("  iterations: %zu", iterations);
+
+  return result;
 }
 
