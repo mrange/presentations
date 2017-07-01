@@ -22,12 +22,6 @@
 
 namespace
 {
-  constexpr auto    min_x    = -1.5 ;
-  constexpr auto    min_y    = -1.0 ;
-  constexpr auto    max_x    =  0.5 ;
-  constexpr auto    max_y    =  1.0 ;
-  constexpr auto    max_iter =  50U ;
-
   auto mandelbrot (double cx, double cy)
   {
     auto x    = cx      ;
