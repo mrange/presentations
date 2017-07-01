@@ -22,16 +22,30 @@
 
 #pragma warning(disable : 4459)
 
-#define MANDEL_CMPMASK(i)                                                                     \
-  x2[i] = _mm256_mul_ps  (x[i], x[i]);                                                        \
-  y2[i] = _mm256_mul_ps  (y[i], y[i]);                                                        \
-  cm[i] = _mm256_movemask_ps (_mm256_cmp_ps  (_mm256_add_ps(x2[i], y2[i]), _4, _CMP_LT_OQ));
+#define MANDEL_INDEPENDENT(i)                                         \
+  xy[i] = _mm256_mul_ps (x[i], y[i]);                           \
+  x2[i] = _mm256_mul_ps (x[i], x[i]);                           \
+  y2[i] = _mm256_mul_ps (y[i], y[i]);
+#define MANDEL_DEPENDENT(i)                                           \
+  y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]); \
+  x[i]  = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);
 
-#define MANDEL_NEXT(i)                                                                        \
-  xy[i] = _mm256_mul_ps (x[i], y[i]);                                                         \
-  x [i] = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);                               \
-  y [i] = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]);
+#define MANDEL_ITERATION()  \
+  MANDEL_INDEPENDENT(0)     \
+  MANDEL_DEPENDENT(0)       \
+  MANDEL_INDEPENDENT(1)     \
+  MANDEL_DEPENDENT(1)       \
+  MANDEL_INDEPENDENT(2)     \
+  MANDEL_DEPENDENT(2)       \
+  MANDEL_INDEPENDENT(3)     \
+  MANDEL_DEPENDENT(3)
 
+#define MANDEL_CMPMASK()  \
+  cmp_mask      =   \
+      (_mm256_movemask_ps (_mm256_cmp_ps (_mm256_add_ps (x2[0], y2[0]), _mm256_set1_ps (4.0F), _CMP_LT_OQ))      ) \
+    | (_mm256_movemask_ps (_mm256_cmp_ps (_mm256_add_ps (x2[1], y2[1]), _mm256_set1_ps (4.0F), _CMP_LT_OQ)) << 8 ) \
+    | (_mm256_movemask_ps (_mm256_cmp_ps (_mm256_add_ps (x2[2], y2[2]), _mm256_set1_ps (4.0F), _CMP_LT_OQ)) << 16) \
+    | (_mm256_movemask_ps (_mm256_cmp_ps (_mm256_add_ps (x2[3], y2[3]), _mm256_set1_ps (4.0F), _CMP_LT_OQ)) << 24)
 
 namespace
 {
@@ -39,43 +53,41 @@ namespace
 
   auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
   {
-    __m256 x[simultaneous] = { cx[0], cx[1], cx[2], cx[3] };
-    __m256 y[simultaneous] = { cy[0], cy[1], cy[2], cy[3] };
+    __m256 x [simultaneous] = { cx[0], cx[1], cx[2], cx[3] };
+    __m256 y [simultaneous] = { cy[0], cy[1], cy[2], cy[3] };
 
-    int cmp_mask  = 0 ;
+    __m256 x2[simultaneous];
+    __m256 y2[simultaneous];
+    __m256 xy[simultaneous];
 
-    for (auto iter = max_iter; iter > 0; --iter)
+    int cmp_mask    = 0 ;
+
+    // 6 * 8 + 2 => 50 iterations
+    for (auto iter = 6; iter > 0; --iter)
     {
-      auto _4         = _mm256_set1_ps (4.0);
+      // 8 inner steps
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
 
-      __m256 x2[simultaneous];
-      __m256 y2[simultaneous];
-      __m256 xy[simultaneous];
-      int    cm[simultaneous];
-
-      MANDEL_CMPMASK (0);
-      MANDEL_CMPMASK (1);
-      MANDEL_CMPMASK (2);
-      MANDEL_CMPMASK (3);
-
-      cmp_mask  = 
-          (cm[0]        )
-        | (cm[1] << 8   )
-        | (cm[2] << 16  )
-        | (cm[3] << 24  )
-        ;
+      MANDEL_CMPMASK();
 
       if (!cmp_mask)
       {
         return 0;
       }
+  }
 
-      MANDEL_NEXT (0);
-      MANDEL_NEXT (1);
-      MANDEL_NEXT (2);
-      MANDEL_NEXT (3);
+    // Last 2 steps
+    MANDEL_ITERATION();
+    MANDEL_ITERATION();
 
-    }
+    MANDEL_CMPMASK();
 
     return cmp_mask;
   }
