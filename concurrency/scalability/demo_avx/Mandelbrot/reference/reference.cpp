@@ -56,8 +56,12 @@ namespace
     auto scalex = (max_x - min_x) / dim;
     auto scaley = (max_y - min_y) / dim;
 
-    for (auto y = 0U; y < dim; ++y)
+    auto sdim   = static_cast<int> (dim);
+
+//    #pragma omp parallel for schedule(guided)
+    for (auto sy = 0; sy < sdim; ++sy)
     {
+      auto y        = static_cast<std::size_t> (sy);
       auto yoffset = y*width;
       for (auto w = 0U; w < width; ++w)
       {
