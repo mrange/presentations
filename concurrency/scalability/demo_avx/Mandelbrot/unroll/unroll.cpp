@@ -20,7 +20,9 @@
 
 #include "../common.hpp"
 
-#pragma warning(disable : 4459)
+#ifdef _MSVC_LANG
+# pragma warning(disable : 4459)
+#endif
 
 #define MANDEL_INDEPENDENT(i)                                     \
   xy[i] = _mm256_mul_ps (x[i], y[i]);                             \
@@ -51,7 +53,7 @@ namespace
 {
   constexpr auto simultaneous = 4;
 
-  auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
+  MANDEL_INLINE auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
   {
     __m256 x [simultaneous] = { cx[0], cx[1], cx[2], cx[3] };
     __m256 y [simultaneous] = { cy[0], cy[1], cy[2], cy[3] };
@@ -81,7 +83,7 @@ namespace
       {
         return 0;
       }
-  }
+    }
 
     // Last 2 steps
     MANDEL_ITERATION();
