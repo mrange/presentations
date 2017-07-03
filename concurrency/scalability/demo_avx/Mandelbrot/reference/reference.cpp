@@ -89,7 +89,7 @@ int main (int argc, char const * argv[])
 {
   auto result = do_main ("mandelbrot_reference.pbm", argc, argv, &compute_set);
 
-  std::printf ("  iterations: %zu", iterations);
+  std::printf ("  iterations: %zu\n", iterations);
 
   return result;
 }

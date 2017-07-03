@@ -37,7 +37,7 @@ namespace
 {
   constexpr auto simultaneous = 4;
 
-  __forceinline auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
+  MANDEL_INLINE auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
   {
     __m256 x[simultaneous] = { cx[0], cx[1], cx[2], cx[3] };
     __m256 y[simultaneous] = { cy[0], cy[1], cy[2], cy[3] };

@@ -22,6 +22,11 @@
 #include <vector>
 #include <tuple>
 
+#include <emmintrin.h>
+#include <immintrin.h>
+
+#define MANDEL_INLINE inline
+
 namespace
 {
   constexpr auto    min_x    = -1.5 ;
@@ -62,7 +67,7 @@ namespace
     auto ms   = std::get<0> (res);
     auto& set = std::get<1> (res);
 
-    std::printf ("  it took %lld ms\n", ms);
+    std::printf ("  it took %ld ms\n", ms);
 
     auto file = std::fopen (pbm_name, "wb");
 
@@ -102,8 +107,8 @@ namespace
       : x   (bm.x)
       , y   (bm.y)
       , w   (bm.w)
-      , b   (bm.b)
       , sz  (bm.sz)
+      , b   (bm.b)
     {
       bm.b = nullptr;
     }
