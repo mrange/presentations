@@ -37,12 +37,11 @@ namespace
 {
   constexpr auto simultaneous = 4;
 
-  auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
+  __forceinline auto mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
   {
     __m256 x[simultaneous] = { cx[0], cx[1], cx[2], cx[3] };
     __m256 y[simultaneous] = { cy[0], cy[1], cy[2], cy[3] };
-
-    int cmp_mask  = 0 ;
+    int   cm[simultaneous];
 
     for (auto iter = max_iter; iter > 0; --iter)
     {
@@ -51,19 +50,18 @@ namespace
       __m256 x2[simultaneous];
       __m256 y2[simultaneous];
       __m256 xy[simultaneous];
-      int    cm[simultaneous];
 
       MANDEL_CMPMASK (0);
       MANDEL_CMPMASK (1);
       MANDEL_CMPMASK (2);
       MANDEL_CMPMASK (3);
 
-      cmp_mask  = 
-          (cm[0]        )
-        | (cm[1] << 8   )
-        | (cm[2] << 16  )
-        | (cm[3] << 24  )
-        ;
+      auto cmp_mask = 
+            cm[0]
+          | cm[1]
+          | cm[2]
+          | cm[3]
+          ;
 
       if (!cmp_mask)
       {
@@ -76,6 +74,13 @@ namespace
       MANDEL_NEXT (3);
 
     }
+
+    auto cmp_mask = 
+          (cm[0]        )
+        | (cm[1] << 8   )
+        | (cm[2] << 16  )
+        | (cm[3] << 24  )
+        ;
 
     return cmp_mask;
   }

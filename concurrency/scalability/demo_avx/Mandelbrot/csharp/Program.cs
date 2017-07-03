@@ -88,6 +88,7 @@ namespace csharp
       return r[i] < 4 ? bit : 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static byte Mandelbrot(Float4 cx_0, Float4 cy_0, Float4 cx_1, Float4 cy_1)
     {
       var x_0   = cx_0;
