@@ -20,7 +20,9 @@
 
 #include "../common.hpp"
 
-#pragma warning(disable : 4459)
+#ifdef _MSVC_LANG
+# pragma warning(disable : 4459)
+#endif
 
 #define MANDEL_CMPMASK(i)                                                                     \
   x2[i] = _mm256_mul_ps  (x[i], x[i]);                                                        \

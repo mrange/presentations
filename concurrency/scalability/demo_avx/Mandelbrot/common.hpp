@@ -25,7 +25,11 @@
 #include <emmintrin.h>
 #include <immintrin.h>
 
-#define MANDEL_INLINE inline
+#ifdef _MSVC_LANG
+# define MANDEL_INLINE __forceinline
+#else
+# define MANDEL_INLINE inline
+#endif
 
 namespace
 {
@@ -41,7 +45,7 @@ namespace
     auto before = std::chrono::high_resolution_clock::now ();
     auto result = a ();
     auto after  = std::chrono::high_resolution_clock::now ();
-    auto diff   = std::chrono::duration_cast<std::chrono::milliseconds> (after - before).count ();
+    auto diff   = static_cast<int> (std::chrono::duration_cast<std::chrono::milliseconds> (after - before).count ());
     return std::make_tuple (diff, std::move (result));
   }
 
@@ -67,7 +71,7 @@ namespace
     auto ms   = std::get<0> (res);
     auto& set = std::get<1> (res);
 
-    std::printf ("  it took %ld ms\n", ms);
+    std::printf ("  it took %d ms\n", ms);
 
     auto file = std::fopen (pbm_name, "wb");
 

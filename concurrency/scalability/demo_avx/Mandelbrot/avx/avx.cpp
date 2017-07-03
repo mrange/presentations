@@ -20,7 +20,9 @@
 
 #include "../common.hpp"
 
-#pragma warning(disable : 4459)
+#ifdef _MSVC_LANG
+# pragma warning(disable : 4459)
+#endif
 
 namespace
 {

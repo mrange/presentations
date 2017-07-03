@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <chrono>
+#include <memory>
 #include <vector>
 #include <tuple>
 
