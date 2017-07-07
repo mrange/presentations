@@ -27,7 +27,7 @@
 #define MANDEL_CMPMASK(i)                                                                     \
   x2[i] = _mm256_mul_ps  (x[i], x[i]);                                                        \
   y2[i] = _mm256_mul_ps  (y[i], y[i]);                                                        \
-  cm[i] = _mm256_movemask_ps (_mm256_cmp_ps  (_mm256_add_ps(x2[i], y2[i]), _4, _CMP_LT_OQ));
+  cm[i] = _mm256_movemask_ps (_mm256_cmp_ps  (_mm256_add_ps(x2[i], y2[i]), _4, _CMP_LE_OQ));
 
 #define MANDEL_NEXT(i)                                                                        \
   xy[i] = _mm256_mul_ps (x[i], y[i]);                                                         \

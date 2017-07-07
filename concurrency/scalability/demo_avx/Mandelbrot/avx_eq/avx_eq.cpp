@@ -26,6 +26,101 @@
 
 namespace
 {
+  void mandelbrot (
+      int             sz
+    , float           cxs[]
+    , float           cy0
+    , std::uint8_t *  pixels
+    )
+  {
+    assert(sz > 7);
+    assert(sz % 8 == 0);
+
+    auto cx     = _mm256_loadu_ps (cxs);
+    auto cy     = _mm256_set1_ps (cy0);
+
+    auto x      = cx;
+    auto y      = cy;
+    auto rem    = _mm256_set1_ps (max_iter - 1);
+
+    auto i      = 8;
+    int slots[] = {0, 1, 2, 3, 4, 5, 6, 7};
+
+    auto active = 8;
+
+    do
+    {
+      auto x2         = _mm256_mul_ps  (x, x);
+      auto y2         = _mm256_mul_ps  (y, y);
+      auto r2         = _mm256_add_ps  (x2, y2);
+
+      auto inf_mask   = _mm256_movemask_ps (_mm256_cmp_ps  (r2, _mm256_set1_ps (4.0), _CMP_NLT_UQ));
+      while (inf_mask)
+      {
+        auto r      = inf_mask & (inf_mask - 1);
+        auto slot   = ~r       & (inf_mask - 1);
+        auto p      = slots[slot];
+        auto bit    = (7 - p % 8);
+        auto idx    = p / 8;
+        pixels[idx] &=~(1 << bit);
+        if (i < sz)
+        {
+          slots[slot]         = i;
+          rem.m256_f32[slot]  = max_iter - 1;
+          cx.m256_f32[slot]   = cxs[i];
+          x.m256_f32[slot]    = cxs[i];
+          ++i;
+        }
+        else
+        {
+          slots[slot]         = -1 ;
+          rem.m256_f32[slot]  = NAN;
+          cx.m256_f32[slot]   = NAN;
+          x.m256_f32[slot]    = NAN; 
+          --active;
+        }
+
+        inf_mask = r;
+      }
+
+      auto xy       = _mm256_mul_ps (x, y);
+      y             = _mm256_add_ps (_mm256_add_ps (xy, xy) , cy);
+      x             = _mm256_add_ps (_mm256_sub_ps (x2, y2) , cx);
+
+      rem           = _mm256_sub_ps (rem, _mm256_set1_ps (1.0));
+      auto rem_mask = _mm256_movemask_ps (rem);
+      while (rem_mask)
+      {
+        auto r      = inf_mask & (inf_mask - 1);
+        auto slot   = ~r       & (inf_mask - 1);
+        auto p      = slots[slot];
+        auto bit    = (7 - p % 8);
+        auto idx    = p / 8;
+        pixels[idx] |=(1 << bit);
+        if (i < sz)
+        {
+          slots[slot]         = i;
+          rem.m256_f32[slot]  = max_iter - 1;
+          cx.m256_f32[slot]   = cxs[i];
+          x.m256_f32[slot]    = cxs[i];
+          ++i;
+        }
+        else
+        {
+          slots[slot]         = -1 ;
+          rem.m256_f32[slot]  = NAN;
+          cx.m256_f32[slot]   = NAN;
+          x.m256_f32[slot]    = NAN; 
+          --active;
+        }
+
+        inf_mask = r;
+      }
+
+    } while(active);
+  }
+
+
   auto mandelbrot (__m256 cx, __m256 cy)
   {
     auto x        = cx;
@@ -108,6 +203,6 @@ namespace
 
 int main (int argc, char const * argv[])
 {
-  return do_main ("mandelbrot_avx.pbm", argc, argv, &compute_set);
+  return do_main ("mandelbrot_avx_eq.pbm", argc, argv, &compute_set);
 }
 

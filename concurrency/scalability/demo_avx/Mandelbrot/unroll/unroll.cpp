@@ -43,7 +43,7 @@
   MANDEL_DEPENDENT(3)
 
 #define MANDEL_CMP(i) \
-  _mm256_cmp_ps (_mm256_add_ps (x2[i], y2[i]), _mm256_set1_ps (4.0F), _CMP_LT_OQ)
+  _mm256_cmp_ps (_mm256_add_ps (x2[i], y2[i]), _mm256_set1_ps (4.0F), _CMP_LE_OQ)
 
 #define MANDEL_CMPMASK()  \
   std::uint32_t cmp_mask =                        \
