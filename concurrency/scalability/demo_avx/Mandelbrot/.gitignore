@@ -3,3 +3,5 @@
 *.opendb
 *.pbm
 *.out
+*.dSYM/
+
