@@ -49,20 +49,14 @@ namespace
 
     auto active = 8;
 
-    do
+    auto updater = [&](int mask, auto && action)
     {
-      {
-        rem           = _mm256_sub_ps (rem, sub);
-        auto rem_mask = _mm256_movemask_ps (rem);
-        while (rem_mask)
+        while (mask)
         {
-          auto next   = rem_mask & (rem_mask - 1);
+          auto next   = mask & (mask - 1);
           auto slot   = 0UL;
-          _BitScanForward(&slot, rem_mask);
-          auto p      = slots[slot];
-          auto bit    = (7 - p % 8);
-          auto idx    = p / 8;
-          pixels[idx] |=(1 << bit);
+          _BitScanForward(&slot, mask);
+          action(slots[slot]);
           if (i < sz)
           {
             slots[slot]         = i;
@@ -84,8 +78,21 @@ namespace
             --active;
           }
 
-          rem_mask = next;
+          mask = next;
         }
+    };
+
+    do
+    {
+      {
+        rem           = _mm256_sub_ps (rem, sub);
+        auto rem_mask = _mm256_movemask_ps (rem);
+        updater(rem_mask, [&](auto && p) 
+          {          
+            auto bit    = (7 - p % 8);
+            auto idx    = p / 8;
+            pixels[idx] |=(1 << bit);
+          });
       }
 
       auto x2         = _mm256_mul_ps  (x, x);
@@ -96,44 +103,10 @@ namespace
         auto inf_mask   = _mm256_movemask_ps (_mm256_cmp_ps  (r2, _mm256_set1_ps (4.0), _CMP_NLT_UQ));
         if (inf_mask)
         {
-          do
-          {
-            auto next   = inf_mask & (inf_mask - 1);
-            auto slot   = 0UL;
-            _BitScanForward(&slot, inf_mask);
-            /*
-            auto p      = slots[slot];
-            auto bit    = (7 - p % 8);
-            auto idx    = p / 8;
-            pixels[idx] &=~(1 << bit);
-            */
-            if (i < sz)
-            {
-              slots[slot]         = i;
-              rem.m256_f32[slot]  = max_iter - 1;
-              cx.m256_f32[slot]   = cxs[i];
-              x.m256_f32[slot]    = cxs[i];
-              y.m256_f32[slot]    = cy0;
-              ++i;
-            }
-            else
-            {
-              slots[slot]         = -1 ;
-              rem.m256_f32[slot]  = 0;
-              sub.m256_f32[slot]  = 0;
-              cx.m256_f32[slot]   = 0;
-              cy.m256_f32[slot]   = 0;
-              x.m256_f32[slot]    = 0; 
-              y.m256_f32[slot]    = 0;
-              --active;
-            }
-
-            inf_mask = next;
-
-          } while (inf_mask);       
+          updater(inf_mask, [](auto &&) {});
+          x2 = _mm256_mul_ps  (x, x);
+          y2 = _mm256_mul_ps  (y, y);
         }
-        x2 = _mm256_mul_ps  (x, x);
-        y2 = _mm256_mul_ps  (y, y);
       }
 
       auto xy       = _mm256_mul_ps (x, y);
