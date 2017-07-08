@@ -27,8 +27,8 @@
 namespace
 {
   void mandelbrot (
-      int             sz
-    , float           cxs[]
+      std::size_t     sz
+    , float const *   cxs
     , float           cy0
     , std::uint8_t *  pixels
     )
@@ -41,6 +41,7 @@ namespace
 
     auto x      = cx;
     auto y      = cy;
+    auto sub    = _mm256_set1_ps (1.0);
     auto rem    = _mm256_set1_ps (max_iter - 1);
 
     auto i      = 8;
@@ -50,104 +51,96 @@ namespace
 
     do
     {
+      {
+        rem           = _mm256_sub_ps (rem, sub);
+        auto rem_mask = _mm256_movemask_ps (rem);
+        while (rem_mask)
+        {
+          auto next   = rem_mask & (rem_mask - 1);
+          auto slot   = 0UL;
+          _BitScanForward(&slot, rem_mask);
+          auto p      = slots[slot];
+          auto bit    = (7 - p % 8);
+          auto idx    = p / 8;
+          pixels[idx] |=(1 << bit);
+          if (i < sz)
+          {
+            slots[slot]         = i;
+            rem.m256_f32[slot]  = max_iter - 1;
+            cx.m256_f32[slot]   = cxs[i];
+            x.m256_f32[slot]    = cxs[i];
+            y.m256_f32[slot]    = cy0;
+            ++i;
+          }
+          else
+          {
+            slots[slot]         = -1 ;
+            rem.m256_f32[slot]  = 0;
+            sub.m256_f32[slot]  = 0;
+            cx.m256_f32[slot]   = 0;
+            cy.m256_f32[slot]   = 0;
+            x.m256_f32[slot]    = 0; 
+            y.m256_f32[slot]    = 0;
+            --active;
+          }
+
+          rem_mask = next;
+        }
+      }
+
       auto x2         = _mm256_mul_ps  (x, x);
       auto y2         = _mm256_mul_ps  (y, y);
       auto r2         = _mm256_add_ps  (x2, y2);
 
-      auto inf_mask   = _mm256_movemask_ps (_mm256_cmp_ps  (r2, _mm256_set1_ps (4.0), _CMP_NLT_UQ));
-      while (inf_mask)
       {
-        auto r      = inf_mask & (inf_mask - 1);
-        auto slot   = ~r       & (inf_mask - 1);
-        auto p      = slots[slot];
-        auto bit    = (7 - p % 8);
-        auto idx    = p / 8;
-        pixels[idx] &=~(1 << bit);
-        if (i < sz)
+        auto inf_mask   = _mm256_movemask_ps (_mm256_cmp_ps  (r2, _mm256_set1_ps (4.0), _CMP_NLT_UQ));
+        if (inf_mask)
         {
-          slots[slot]         = i;
-          rem.m256_f32[slot]  = max_iter - 1;
-          cx.m256_f32[slot]   = cxs[i];
-          x.m256_f32[slot]    = cxs[i];
-          ++i;
-        }
-        else
-        {
-          slots[slot]         = -1 ;
-          rem.m256_f32[slot]  = NAN;
-          cx.m256_f32[slot]   = NAN;
-          x.m256_f32[slot]    = NAN; 
-          --active;
-        }
+          do
+          {
+            auto next   = inf_mask & (inf_mask - 1);
+            auto slot   = 0UL;
+            _BitScanForward(&slot, inf_mask);
+            /*
+            auto p      = slots[slot];
+            auto bit    = (7 - p % 8);
+            auto idx    = p / 8;
+            pixels[idx] &=~(1 << bit);
+            */
+            if (i < sz)
+            {
+              slots[slot]         = i;
+              rem.m256_f32[slot]  = max_iter - 1;
+              cx.m256_f32[slot]   = cxs[i];
+              x.m256_f32[slot]    = cxs[i];
+              y.m256_f32[slot]    = cy0;
+              ++i;
+            }
+            else
+            {
+              slots[slot]         = -1 ;
+              rem.m256_f32[slot]  = 0;
+              sub.m256_f32[slot]  = 0;
+              cx.m256_f32[slot]   = 0;
+              cy.m256_f32[slot]   = 0;
+              x.m256_f32[slot]    = 0; 
+              y.m256_f32[slot]    = 0;
+              --active;
+            }
 
-        inf_mask = r;
+            inf_mask = next;
+
+          } while (inf_mask);       
+        }
+        x2 = _mm256_mul_ps  (x, x);
+        y2 = _mm256_mul_ps  (y, y);
       }
 
       auto xy       = _mm256_mul_ps (x, y);
       y             = _mm256_add_ps (_mm256_add_ps (xy, xy) , cy);
       x             = _mm256_add_ps (_mm256_sub_ps (x2, y2) , cx);
-
-      rem           = _mm256_sub_ps (rem, _mm256_set1_ps (1.0));
-      auto rem_mask = _mm256_movemask_ps (rem);
-      while (rem_mask)
-      {
-        auto r      = inf_mask & (inf_mask - 1);
-        auto slot   = ~r       & (inf_mask - 1);
-        auto p      = slots[slot];
-        auto bit    = (7 - p % 8);
-        auto idx    = p / 8;
-        pixels[idx] |=(1 << bit);
-        if (i < sz)
-        {
-          slots[slot]         = i;
-          rem.m256_f32[slot]  = max_iter - 1;
-          cx.m256_f32[slot]   = cxs[i];
-          x.m256_f32[slot]    = cxs[i];
-          ++i;
-        }
-        else
-        {
-          slots[slot]         = -1 ;
-          rem.m256_f32[slot]  = NAN;
-          cx.m256_f32[slot]   = NAN;
-          x.m256_f32[slot]    = NAN; 
-          --active;
-        }
-
-        inf_mask = r;
-      }
 
     } while(active);
-  }
-
-
-  auto mandelbrot (__m256 cx, __m256 cy)
-  {
-    auto x        = cx;
-    auto y        = cy;
-
-    int cmp_mask  = 0 ;
-
-    for (auto iter = max_iter; iter > 0; --iter)
-    {
-      auto x2         = _mm256_mul_ps  (x, x);
-      auto y2         = _mm256_mul_ps  (y, y);
-      auto r2         = _mm256_add_ps  (x2, y2);
-      auto _4         = _mm256_set1_ps (4.0);
-      auto cmp        = _mm256_cmp_ps  (r2, _4, _CMP_LE_OQ);
-      cmp_mask        = _mm256_movemask_ps (cmp);
-
-      if (!cmp_mask)
-      {
-        return 0;
-      }
-
-      auto xy       = _mm256_mul_ps (x, y);
-      y             = _mm256_add_ps (_mm256_add_ps (xy, xy) , cy);
-      x             = _mm256_add_ps (_mm256_sub_ps (x2, y2) , cx);
-    }
-
-    return cmp_mask;
   }
 
   bitmap::uptr compute_set (std::size_t const dim)
@@ -165,16 +158,18 @@ namespace
     auto scalex = (max_x - min_x) / dim;
     auto scaley = (max_y - min_y) / dim;
 
-    auto incx   = _mm256_set_ps (
-        0*scalex
-      , 1*scalex
-      , 2*scalex
-      , 3*scalex
-      , 4*scalex
-      , 5*scalex
-      , 6*scalex
-      , 7*scalex
-      );
+    std::memset (pset, 0, set->w*set->y);
+
+    std::vector<float> cxs;
+    cxs.resize (dim);
+    {
+      auto x = min_x;
+      for (auto iter = 0U; iter < dim; ++iter)
+      {
+        cxs[iter] = x;
+        x += scalex;
+      }
+    }
 
     auto sdim   = static_cast<int> (dim);
 
@@ -184,17 +179,7 @@ namespace
       auto y        = static_cast<std::size_t> (sy);
       auto yoffset  = y*width;
 
-      for (auto w = 0U; w < width; ++w)
-      {
-        auto x = w << 3;
-
-        __m256 cx = _mm256_add_ps  (_mm256_set1_ps (scalex*x + min_x), incx);
-        __m256 cy = _mm256_set1_ps (scaley*y + min_y);
-
-        auto bits = mandelbrot (cx, cy);
-
-        pset[yoffset + w] = static_cast<std::uint8_t> (bits);
-      }
+      mandelbrot (dim, &cxs.front (), scaley*y + min_y, pset + yoffset);
     }
 
     return set;
