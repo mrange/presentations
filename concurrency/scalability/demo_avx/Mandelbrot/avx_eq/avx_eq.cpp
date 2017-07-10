@@ -84,17 +84,6 @@ namespace
 
     do
     {
-      {
-        rem           = _mm256_sub_ps (rem, sub);
-        auto rem_mask = _mm256_movemask_ps (rem);
-        updater(rem_mask, [&](auto && p) 
-          {          
-            auto bit    = (7 - p % 8);
-            auto idx    = p / 8;
-            pixels[idx] |=(1 << bit);
-          });
-      }
-
       auto x2         = _mm256_mul_ps  (x, x);
       auto y2         = _mm256_mul_ps  (y, y);
       auto r2         = _mm256_add_ps  (x2, y2);
@@ -112,6 +101,17 @@ namespace
       auto xy       = _mm256_mul_ps (x, y);
       y             = _mm256_add_ps (_mm256_add_ps (xy, xy) , cy);
       x             = _mm256_add_ps (_mm256_sub_ps (x2, y2) , cx);
+
+      {
+        rem           = _mm256_sub_ps (rem, sub);
+        auto rem_mask = _mm256_movemask_ps (rem);
+        updater(rem_mask, [&](auto && p) 
+          {          
+            auto bit    = (7 - p % 8);
+            auto idx    = p / 8;
+            pixels[idx] |=(1 << bit);
+          });
+      }
 
     } while(active);
   }
