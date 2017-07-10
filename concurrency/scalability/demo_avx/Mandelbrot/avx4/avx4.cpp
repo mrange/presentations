@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// Copyright 2017 Mårten Rånge
+// Copyright 2017 Mï¿½rten Rï¿½nge
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ namespace
       MANDEL_CMPMASK (2);
       MANDEL_CMPMASK (3);
 
-      auto cmp_mask = 
+      auto cmp_mask =
             cm[0]
           | cm[1]
           | cm[2]
@@ -77,7 +77,7 @@ namespace
 
     }
 
-    auto cmp_mask = 
+    auto cmp_mask =
           (cm[0]        )
         | (cm[1] << 8   )
         | (cm[2] << 16  )

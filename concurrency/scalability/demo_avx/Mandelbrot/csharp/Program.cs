@@ -96,8 +96,8 @@ namespace csharp
       var x_1   = cx_1;
       var y_1   = cy_1;
 
-      var r2_0  = new Float4(0);      
-      var r2_1  = new Float4(0);      
+      var r2_0  = new Float4(0);
+      var r2_1  = new Float4(0);
 
       for (var iter = maxIter; iter > 0; --iter)
       {

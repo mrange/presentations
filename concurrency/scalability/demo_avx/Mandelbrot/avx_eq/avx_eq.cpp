@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// Copyright 2017 Mårten Rånge
+// Copyright 2017 Mï¿½rten Rï¿½nge
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ namespace
             sub.m256_f32[slot]  = 0;
             cx.m256_f32[slot]   = 0;
             cy.m256_f32[slot]   = 0;
-            x.m256_f32[slot]    = 0; 
+            x.m256_f32[slot]    = 0;
             y.m256_f32[slot]    = 0;
             --active;
           }
@@ -105,8 +105,8 @@ namespace
       {
         rem           = _mm256_sub_ps (rem, sub);
         auto rem_mask = _mm256_movemask_ps (rem);
-        updater(rem_mask, [&](auto && p) 
-          {          
+        updater(rem_mask, [&](auto && p)
+          {
             auto bit    = (7 - p % 8);
             auto idx    = p / 8;
             pixels[idx] |=(1 << bit);
