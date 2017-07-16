@@ -23,9 +23,6 @@ unrolling/4 independent groups/AVX/4 cores:
 csharp
   actual   : 0.973 sec
 
-
 fsharp
-  actual   : 0.973 sec
-
-
+  actual   : 0.751 sec
 

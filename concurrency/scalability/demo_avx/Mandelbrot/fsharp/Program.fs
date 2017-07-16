@@ -251,7 +251,7 @@ let main argv =
   //  Can be viewed using: http://paulcuth.me.uk/netpbm-viewer/
   do
 //    let fs = Console.OpenStandardOutput()
-    use fs = System.IO.File.Create "mandelbrot_fsharp2.pbm"
+    use fs = System.IO.File.Create "mandelbrot_fsharp.pbm"
     use ss = new System.IO.StreamWriter (fs)
     ss.Write (sprintf "P4\n%d %d\n" dim dim)
     ss.Flush ()
