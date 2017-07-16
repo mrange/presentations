@@ -20,5 +20,12 @@ AVX/4 cores:
 unrolling/4 independent groups/AVX/4 cores:
   actual   : 0.277 sec => 1.4x => 3.0x => 23x => 78x speedup
 
+csharp
+  actual   : 0.973 sec
+
+
+fsharp
+  actual   : 0.973 sec
+
 
 
