@@ -38,6 +38,17 @@ open System.Threading.Tasks
 
 type Float4 = Vector<float32>
 
+let float4 v0 v1 v2 v3 =
+  let vs = Array.zeroCreate Float4.Count
+  vs.[0] <- v0
+  vs.[1] <- v1
+  vs.[2] <- v2
+  vs.[3] <- v3
+  Float4 vs
+
+let inline float4_1 (v : float32) = Float4 v
+
+
 type Mandelbrot =
   class
 
@@ -222,10 +233,10 @@ let main argv =
 
   let pixels    = Array.zeroCreate (width*dim)
 
-  let minX4     = Float4 minX
-  let scaleX4   = Float4 scaleX
-  let lshiftX4  = Float4 [|0.F; 1.F; 2.F; 3.F|]
-  let ushiftX4  = Float4 [|4.F; 5.F; 6.F; 7.F|]
+  let minX4     = float4_1 minX
+  let scaleX4   = float4_1 scaleX
+  let lshiftX4  = float4 0.F 1.F 2.F 3.F
+  let ushiftX4  = float4 4.F 5.F 6.F 7.F
 
   let mandelbrotSet () =
     Parallel.For (0, dim / 2, fun hy ->
