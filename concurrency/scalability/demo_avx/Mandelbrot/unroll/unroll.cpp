@@ -54,16 +54,52 @@
 
 namespace
 {
-  constexpr auto simultaneous = 4;
+#define MANDEL_INDEPENDENT(i)                                         \
+        xy[i] = _mm256_mul_ps (x[i], y[i]);                           \
+        x2[i] = _mm256_mul_ps (x[i], x[i]);                           \
+        y2[i] = _mm256_mul_ps (y[i], y[i]);
+#define MANDEL_DEPENDENT(i)                                           \
+        y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]); \
+        x[i]  = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);
 
-  MANDEL_INLINE std::uint32_t mandelbrot (__m256 cx[simultaneous], __m256 cy[simultaneous])
+#define MANDEL_ITERATION()  \
+  MANDEL_INDEPENDENT(0)     \
+  MANDEL_DEPENDENT(0)       \
+  MANDEL_INDEPENDENT(1)     \
+  MANDEL_DEPENDENT(1)       \
+  MANDEL_INDEPENDENT(2)     \
+  MANDEL_DEPENDENT(2)       \
+  MANDEL_INDEPENDENT(3)     \
+  MANDEL_DEPENDENT(3)
+
+#define MANDEL_CMP(i) \
+  _mm256_cmp_ps (_mm256_add_ps (x2[i], y2[i]), _mm256_set1_ps (4.0F), _CMP_LE_OQ)
+
+#define MANDEL_CMPMASK()                          \
+  std::uint32_t cmp_mask =                        \
+      (_mm256_movemask_ps (MANDEL_CMP(0))      )  \
+    | (_mm256_movemask_ps (MANDEL_CMP(1)) << 8 )  \
+    | (_mm256_movemask_ps (MANDEL_CMP(2)) << 16)  \
+    | (_mm256_movemask_ps (MANDEL_CMP(3)) << 24)
+
+#define MANDEL_CHECKINF()                         \
+  auto cont = _mm256_movemask_ps (_mm256_or_ps (  \
+      _mm256_or_ps (MANDEL_CMP(0), MANDEL_CMP(1)) \
+    , _mm256_or_ps (MANDEL_CMP(2), MANDEL_CMP(3)) \
+    ));                                           \
+  if (!cont)                                      \
+  {                                               \
+    return 0;                                     \
+  }
+
+  MANDEL_INLINE int mandelbrot_avx (__m256 cx[4], __m256 cy[4])
   {
-    __m256 x [simultaneous] = { cx[0], cx[1], cx[2], cx[3] };
-    __m256 y [simultaneous] = { cy[0], cy[1], cy[2], cy[3] };
 
-    __m256 x2[simultaneous];
-    __m256 y2[simultaneous];
-    __m256 xy[simultaneous];
+    __m256  x[4] {cx[0], cx[1], cx[2], cx[3]};
+    __m256  y[4] {cy[0], cy[1], cy[2], cy[3]};
+    __m256 x2[4];
+    __m256 y2[4];
+    __m256 xy[4];
 
     // 6 * 8 + 2 => 50 iterations
     for (auto iter = 6; iter > 0; --iter)
@@ -78,15 +114,39 @@ namespace
       MANDEL_ITERATION();
       MANDEL_ITERATION();
 
-      auto cont = _mm256_movemask_ps (_mm256_or_ps (
-          _mm256_or_ps (MANDEL_CMP(0), MANDEL_CMP(1))
-        , _mm256_or_ps (MANDEL_CMP(2), MANDEL_CMP(3))
-        ));
+      MANDEL_CHECKINF();
+    }
 
-      if (!cont)
-      {
-        return 0;
-      }
+    // Last 2 steps
+    MANDEL_ITERATION();
+    MANDEL_ITERATION();
+
+    MANDEL_CMPMASK();
+
+    return cmp_mask;
+  }
+
+  MANDEL_INLINE int mandelbrot_avx_full (__m256 cx[4], __m256 cy[4])
+  {
+
+    __m256  x[4] {cx[0], cx[1], cx[2], cx[3]};
+    __m256  y[4] {cy[0], cy[1], cy[2], cy[3]};
+    __m256 x2[4];
+    __m256 y2[4];
+    __m256 xy[4];
+
+    // 6 * 8 + 2 => 50 iterations
+    for (auto iter = 6; iter > 0; --iter)
+    {
+      // 8 inner steps
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
+      MANDEL_ITERATION();
     }
 
     // Last 2 steps
@@ -136,6 +196,8 @@ namespace
       auto y        = static_cast<std::size_t> (sy);
       auto yoffset  = y*width;
 
+      auto last_reached_full  = false;
+
       for (auto w = 0U; w < width; ++w)
       {
         auto x = w << 3;
@@ -143,15 +205,21 @@ namespace
         __m256 cx_ = _mm256_add_ps  (_mm256_set1_ps (scalex*x + min_x), incx);
         __m256 cy_ = _mm256_set1_ps (scaley*y + min_y);
 
-        __m256 cx[simultaneous] = { cx_, cx_                        , cx_                       , cx_                       };
-        __m256 cy[simultaneous] = { cy_, _mm256_add_ps (cy_, incy1) , _mm256_add_ps (cy_, incy2), _mm256_add_ps (cy_, incy3)};
+        __m256 cx[4] = { cx_, cx_                        , cx_                       , cx_                       };
+        __m256 cy[4] = { cy_, _mm256_add_ps (cy_, incy1) , _mm256_add_ps (cy_, incy2), _mm256_add_ps (cy_, incy3)};
 
-        auto bits = mandelbrot (cx, cy);
+        auto bits = 
+          last_reached_full
+            ? mandelbrot_avx_full (cx, cy)
+            : mandelbrot_avx (cx, cy)
+            ;
 
         pset[yoffset            + w] = static_cast<std::uint8_t> (bits      );
         pset[yoffset + 1*width  + w] = static_cast<std::uint8_t> (bits >> 8 );
         pset[yoffset + 2*width  + w] = static_cast<std::uint8_t> (bits >> 16);
         pset[yoffset + 3*width  + w] = static_cast<std::uint8_t> (bits >> 24);
+
+        last_reached_full = bits != 0;
       }
     }
 
