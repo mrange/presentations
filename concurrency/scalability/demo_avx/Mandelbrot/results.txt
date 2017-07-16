@@ -1,0 +1,24 @@
+Reference:
+Generating mandelbrot set 16000x16000(50)
+  it took 21576 ms
+  iterations: 6,248,109,921
+
+  estimated: 9 flops/iteration
+  estimated: 56,232,989,289 flops
+  estimated: 16.5 sec
+  actual   : 21.6 sec => 77% efficiency
+
+4 cores:
+  actual   : 6.3 sec => 3.4x speedup
+
+AVX/4 cores:
+  actual   : 0.833 sec => 7.6x => 26x speedup
+
+4 independent groups/AVX/4 cores:
+  actual   : 0.379 sec => 2.2x => 17x => 57x speedup
+
+unrolling/4 independent groups/AVX/4 cores:
+  actual   : 0.277 sec => 1.4x => 3.0x => 23x => 78x speedup
+
+
+
