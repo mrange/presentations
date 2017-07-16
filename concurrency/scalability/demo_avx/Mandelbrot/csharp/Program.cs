@@ -74,7 +74,12 @@ namespace csharp
 
     static Float4 float4(float v0, float v1, float v2, float v3)
     {
-      return new Float4 (new [] {v0, v1, v2, v3 });
+      var vs = new float[Float4.Count];
+      vs[0] = v0;
+      vs[1] = v1;
+      vs[2] = v2;
+      vs[3] = v3;
+      return new Float4 (vs);
     }
 
     static Float4 float4_1(float v0)
