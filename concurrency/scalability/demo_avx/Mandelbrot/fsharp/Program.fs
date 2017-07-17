@@ -36,25 +36,37 @@ let timeIt a =
 open System.Numerics
 open System.Threading.Tasks
 
-type Float4 = Vector<float32>
+type FloatN = Vector<float32>
 
 let float4 v0 v1 v2 v3 =
-  let vs = Array.zeroCreate Float4.Count
+  let vs = Array.zeroCreate FloatN.Count
   vs.[0] <- v0
   vs.[1] <- v1
   vs.[2] <- v2
   vs.[3] <- v3
-  Float4 vs
+  FloatN vs
 
-let inline float4_1 (v : float32) = Float4 v
+let float8 v0 v1 v2 v3 v4 v5 v6 v7 =
+  let vs = Array.zeroCreate FloatN.Count
+  vs.[0] <- v0
+  vs.[1] <- v1
+  vs.[2] <- v2
+  vs.[3] <- v3
+  vs.[4] <- v4
+  vs.[5] <- v5
+  vs.[6] <- v6
+  vs.[7] <- v7
+  FloatN vs
+
+let inline float4_1 (v : float32) = FloatN v
 
 
 type Mandelbrot =
   class
 
     static member inline step x y cx cy =
-      let inline ( * ) x y = (x : Float4)*y
-      let inline ( + ) x y = (x : Float4)+y
+      let inline ( * ) x y = (x : FloatN)*y
+      let inline ( + ) x y = (x : FloatN)+y
 
       let xy = x * y
       let x2 = x * x
@@ -65,8 +77,8 @@ type Mandelbrot =
       xx, yy
 
     static member inline step2 x y cx cy =
-      let inline ( * ) x y = (x : Float4)*y
-      let inline ( + ) x y = (x : Float4)+y
+      let inline ( * ) x y = (x : FloatN)*y
+      let inline ( + ) x y = (x : FloatN)+y
 
       let xy = x * y
       let x2 = x * x
@@ -77,7 +89,7 @@ type Mandelbrot =
       xx, yy, x2, y2
 
     // The mandelbrot equation: Z' = Z^2 + C
-    static member mandelbrot cx_0 cy_0 cx_1 cy_1 cx_2 cy_2 cx_3 cy_3 : uint16 =
+    static member mandelbrot_sse cx_0 cy_0 cx_1 cy_1 cx_2 cy_2 cx_3 cy_3 : uint16 =
       let rec loop rem x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3 =
 
         if rem > 0 then
@@ -134,7 +146,7 @@ type Mandelbrot =
           let r2_2 = x2_2 + y2_2
           let r2_3 = x2_3 + y2_3
 
-          let inline cmp (r : Float4) i =
+          let inline cmp (r : FloatN) i =
             r.[i] <= 4.F
             // EXPERIMENTAL: Inline ILAsm
             //let f = r.[i]
@@ -180,7 +192,7 @@ type Mandelbrot =
           let r2_2 = x2_2 + y2_2
           let r2_3 = x2_3 + y2_3
 
-          let inline bit (r : Float4) i s =
+          let inline bit (r : FloatN) i s =
             // EXPERIMENTAL: Inline ILAsm
             //let f = r.[i]
             //let c = (# "clt" f 4.F : byte #)
@@ -189,22 +201,415 @@ type Mandelbrot =
             else  0us
 
           let r =
-                bit r2_0 0 0xF
-            ||| bit r2_0 1 0xE
-            ||| bit r2_0 2 0xD
-            ||| bit r2_0 3 0xC
-            ||| bit r2_1 0 0xB
-            ||| bit r2_1 1 0xA
-            ||| bit r2_1 2 0x9
-            ||| bit r2_1 3 0x8
-            ||| bit r2_2 0 0x7
-            ||| bit r2_2 1 0x6
-            ||| bit r2_2 2 0x5
-            ||| bit r2_2 3 0x4
-            ||| bit r2_3 0 0x3
-            ||| bit r2_3 1 0x2
-            ||| bit r2_3 2 0x1
-            ||| bit r2_3 3 0x0
+                bit r2_0 0 0x7
+            ||| bit r2_0 1 0x6
+            ||| bit r2_0 2 0x5
+            ||| bit r2_0 3 0x4
+            ||| bit r2_1 0 0x3
+            ||| bit r2_1 1 0x2
+            ||| bit r2_1 2 0x1
+            ||| bit r2_1 3 0x0
+            ||| bit r2_2 0 0xF
+            ||| bit r2_2 1 0xE
+            ||| bit r2_2 2 0xD
+            ||| bit r2_2 3 0xC
+            ||| bit r2_3 0 0xB
+            ||| bit r2_3 1 0xA
+            ||| bit r2_3 2 0x9
+            ||| bit r2_3 3 0x8
+
+          r
+
+      loop 6 cx_0 cy_0 cx_0 cy_0 cx_1 cy_1 cx_1 cy_1 cx_2 cy_2 cx_2 cy_2 cx_3 cy_3 cx_3 cy_3
+
+    static member mandelbrot_full_sse cx_0 cy_0 cx_1 cy_1 cx_2 cy_2 cx_3 cy_3 : uint16 =
+      let rec loop rem x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3 =
+
+        if rem > 0 then
+          // #0
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #1
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #2
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #3
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #4
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #5
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #6
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #7
+          let x_0, y_0, x2_0, y2_0 = Mandelbrot.step2 x_0 y_0 cx_0 cy_0
+          let x_1, y_1, x2_1, y2_1 = Mandelbrot.step2 x_1 y_1 cx_1 cy_1
+          let x_2, y_2, x2_2, y2_2 = Mandelbrot.step2 x_2 y_2 cx_2 cy_2
+          let x_3, y_3, x2_3, y2_3 = Mandelbrot.step2 x_3 y_3 cx_3 cy_3
+
+          let r2_0 = x2_0 + y2_0
+          let r2_1 = x2_1 + y2_1
+          let r2_2 = x2_2 + y2_2
+          let r2_3 = x2_3 + y2_3
+
+          loop (rem - 1) x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3
+        else
+          // #48
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #49
+          let x_0, y_0, x2_0, y2_0 = Mandelbrot.step2 x_0 y_0 cx_0 cy_0
+          let x_1, y_1, x2_1, y2_1 = Mandelbrot.step2 x_1 y_1 cx_1 cy_1
+          let x_2, y_2, x2_2, y2_2 = Mandelbrot.step2 x_2 y_2 cx_2 cy_2
+          let x_3, y_3, x2_3, y2_3 = Mandelbrot.step2 x_3 y_3 cx_3 cy_3
+
+          let r2_0 = x2_0 + y2_0
+          let r2_1 = x2_1 + y2_1
+          let r2_2 = x2_2 + y2_2
+          let r2_3 = x2_3 + y2_3
+
+          let inline bit (r : FloatN) i s =
+            // EXPERIMENTAL: Inline ILAsm
+            //let f = r.[i]
+            //let c = (# "clt" f 4.F : byte #)
+            //(# "shl" c s : byte #)
+            if    r.[i] <= 4.F then (1us <<< s)
+            else  0us
+
+          let r =
+                bit r2_0 0 0x7
+            ||| bit r2_0 1 0x6
+            ||| bit r2_0 2 0x5
+            ||| bit r2_0 3 0x4
+            ||| bit r2_1 0 0x3
+            ||| bit r2_1 1 0x2
+            ||| bit r2_1 2 0x1
+            ||| bit r2_1 3 0x0
+            ||| bit r2_2 0 0xF
+            ||| bit r2_2 1 0xE
+            ||| bit r2_2 2 0xD
+            ||| bit r2_2 3 0xC
+            ||| bit r2_3 0 0xB
+            ||| bit r2_3 1 0xA
+            ||| bit r2_3 2 0x9
+            ||| bit r2_3 3 0x8
+
+          r
+
+      loop 6 cx_0 cy_0 cx_0 cy_0 cx_1 cy_1 cx_1 cy_1 cx_2 cy_2 cx_2 cy_2 cx_3 cy_3 cx_3 cy_3
+
+    static member mandelbrot_avx cx_0 cy_0 cx_1 cy_1 cx_2 cy_2 cx_3 cy_3 : uint32 =
+      let rec loop rem x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3 =
+
+        if rem > 0 then
+          // #0
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #1
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #2
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #3
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #4
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #5
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #6
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #7
+          let x_0, y_0, x2_0, y2_0 = Mandelbrot.step2 x_0 y_0 cx_0 cy_0
+          let x_1, y_1, x2_1, y2_1 = Mandelbrot.step2 x_1 y_1 cx_1 cy_1
+          let x_2, y_2, x2_2, y2_2 = Mandelbrot.step2 x_2 y_2 cx_2 cy_2
+          let x_3, y_3, x2_3, y2_3 = Mandelbrot.step2 x_3 y_3 cx_3 cy_3
+
+          let r2_0 = x2_0 + y2_0
+          let r2_1 = x2_1 + y2_1
+          let r2_2 = x2_2 + y2_2
+          let r2_3 = x2_3 + y2_3
+
+          let inline cmp (r : FloatN) i =
+            // EXPERIMENTAL: Inline ILAsm
+            // let f = r.[i]
+            // (# "clt" f 4.F : uint32 #)
+            r.[i] <= 4.F
+
+          let c =
+               cmp r2_0 0
+            || cmp r2_0 1
+            || cmp r2_0 2
+            || cmp r2_0 3
+            || cmp r2_0 4
+            || cmp r2_0 5
+            || cmp r2_0 6
+            || cmp r2_0 7
+            || cmp r2_1 0
+            || cmp r2_1 1
+            || cmp r2_1 2
+            || cmp r2_1 3
+            || cmp r2_1 4
+            || cmp r2_1 5
+            || cmp r2_1 6
+            || cmp r2_1 7
+            || cmp r2_2 0
+            || cmp r2_2 1
+            || cmp r2_2 2
+            || cmp r2_2 3
+            || cmp r2_2 4
+            || cmp r2_2 5
+            || cmp r2_2 6
+            || cmp r2_2 7
+            || cmp r2_3 0
+            || cmp r2_3 1
+            || cmp r2_3 2
+            || cmp r2_3 3
+            || cmp r2_3 4
+            || cmp r2_3 5
+            || cmp r2_3 6
+            || cmp r2_3 7
+
+          if c then
+              loop (rem - 1) x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3
+            else
+              0u
+        else
+          // #48
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #49
+          let x_0, y_0, x2_0, y2_0 = Mandelbrot.step2 x_0 y_0 cx_0 cy_0
+          let x_1, y_1, x2_1, y2_1 = Mandelbrot.step2 x_1 y_1 cx_1 cy_1
+          let x_2, y_2, x2_2, y2_2 = Mandelbrot.step2 x_2 y_2 cx_2 cy_2
+          let x_3, y_3, x2_3, y2_3 = Mandelbrot.step2 x_3 y_3 cx_3 cy_3
+
+          let r2_0 = x2_0 + y2_0
+          let r2_1 = x2_1 + y2_1
+          let r2_2 = x2_2 + y2_2
+          let r2_3 = x2_3 + y2_3
+
+          let inline bit (r : FloatN) i s =
+            // EXPERIMENTAL: Inline ILAsm
+            // let f = r.[i]
+            // let c = (# "clt" f 4.F : uint32 #)
+            // (# "shl" c s : uint32 #)
+            if    r.[i] <= 4.F then (1u <<< s)
+            else  0u
+
+          let r =
+                bit r2_0 0 0x07
+            ||| bit r2_0 1 0x06
+            ||| bit r2_0 2 0x05
+            ||| bit r2_0 3 0x04
+            ||| bit r2_0 4 0x03
+            ||| bit r2_0 5 0x02
+            ||| bit r2_0 6 0x01
+            ||| bit r2_0 7 0x00
+            ||| bit r2_1 0 0x0F
+            ||| bit r2_1 1 0x0E
+            ||| bit r2_1 2 0x0D
+            ||| bit r2_1 3 0x0C
+            ||| bit r2_1 4 0x0B
+            ||| bit r2_1 5 0x0A
+            ||| bit r2_1 6 0x09
+            ||| bit r2_1 7 0x08
+            ||| bit r2_2 0 0x17
+            ||| bit r2_2 1 0x16
+            ||| bit r2_2 2 0x15
+            ||| bit r2_2 3 0x14
+            ||| bit r2_2 4 0x13
+            ||| bit r2_2 5 0x12
+            ||| bit r2_2 6 0x11
+            ||| bit r2_2 7 0x10
+            ||| bit r2_3 0 0x1F
+            ||| bit r2_3 1 0x1E
+            ||| bit r2_3 2 0x1D
+            ||| bit r2_3 3 0x1C
+            ||| bit r2_3 4 0x1B
+            ||| bit r2_3 5 0x1A
+            ||| bit r2_3 6 0x19
+            ||| bit r2_3 7 0x18
+
+          r
+
+      loop 6 cx_0 cy_0 cx_0 cy_0 cx_1 cy_1 cx_1 cy_1 cx_2 cy_2 cx_2 cy_2 cx_3 cy_3 cx_3 cy_3
+
+    static member mandelbrot_full_avx cx_0 cy_0 cx_1 cy_1 cx_2 cy_2 cx_3 cy_3 : uint32 =
+      let rec loop rem x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3 =
+
+        if rem > 0 then
+          // #0
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #1
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #2
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #3
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #4
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #5
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #6
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #7
+          let x_0, y_0, x2_0, y2_0 = Mandelbrot.step2 x_0 y_0 cx_0 cy_0
+          let x_1, y_1, x2_1, y2_1 = Mandelbrot.step2 x_1 y_1 cx_1 cy_1
+          let x_2, y_2, x2_2, y2_2 = Mandelbrot.step2 x_2 y_2 cx_2 cy_2
+          let x_3, y_3, x2_3, y2_3 = Mandelbrot.step2 x_3 y_3 cx_3 cy_3
+
+          let r2_0 = x2_0 + y2_0
+          let r2_1 = x2_1 + y2_1
+          let r2_2 = x2_2 + y2_2
+          let r2_3 = x2_3 + y2_3
+
+          loop (rem - 1) x_0 y_0 cx_0 cy_0 x_1 y_1 cx_1 cy_1 x_2 y_2 cx_2 cy_2 x_3 y_3 cx_3 cy_3
+        else
+          // #48
+          let x_0, y_0 = Mandelbrot.step x_0 y_0 cx_0 cy_0
+          let x_1, y_1 = Mandelbrot.step x_1 y_1 cx_1 cy_1
+          let x_2, y_2 = Mandelbrot.step x_2 y_2 cx_2 cy_2
+          let x_3, y_3 = Mandelbrot.step x_3 y_3 cx_3 cy_3
+
+          // #49
+          let x_0, y_0, x2_0, y2_0 = Mandelbrot.step2 x_0 y_0 cx_0 cy_0
+          let x_1, y_1, x2_1, y2_1 = Mandelbrot.step2 x_1 y_1 cx_1 cy_1
+          let x_2, y_2, x2_2, y2_2 = Mandelbrot.step2 x_2 y_2 cx_2 cy_2
+          let x_3, y_3, x2_3, y2_3 = Mandelbrot.step2 x_3 y_3 cx_3 cy_3
+
+          let r2_0 = x2_0 + y2_0
+          let r2_1 = x2_1 + y2_1
+          let r2_2 = x2_2 + y2_2
+          let r2_3 = x2_3 + y2_3
+
+          let inline bit (r : FloatN) i s =
+            // EXPERIMENTAL: Inline ILAsm
+            // let f = r.[i]
+            // let c = (# "clt" f 4.F : uint32 #)
+            // (# "shl" c s : uint32 #)
+            if    r.[i] <= 4.F then (1u <<< s)
+            else  0u
+
+          let r =
+                bit r2_0 0 0x07
+            ||| bit r2_0 1 0x06
+            ||| bit r2_0 2 0x05
+            ||| bit r2_0 3 0x04
+            ||| bit r2_0 4 0x03
+            ||| bit r2_0 5 0x02
+            ||| bit r2_0 6 0x01
+            ||| bit r2_0 7 0x00
+            ||| bit r2_1 0 0x0F
+            ||| bit r2_1 1 0x0E
+            ||| bit r2_1 2 0x0D
+            ||| bit r2_1 3 0x0C
+            ||| bit r2_1 4 0x0B
+            ||| bit r2_1 5 0x0A
+            ||| bit r2_1 6 0x09
+            ||| bit r2_1 7 0x08
+            ||| bit r2_2 0 0x17
+            ||| bit r2_2 1 0x16
+            ||| bit r2_2 2 0x15
+            ||| bit r2_2 3 0x14
+            ||| bit r2_2 4 0x13
+            ||| bit r2_2 5 0x12
+            ||| bit r2_2 6 0x11
+            ||| bit r2_2 7 0x10
+            ||| bit r2_3 0 0x1F
+            ||| bit r2_3 1 0x1E
+            ||| bit r2_3 2 0x1D
+            ||| bit r2_3 3 0x1C
+            ||| bit r2_3 4 0x1B
+            ||| bit r2_3 5 0x1A
+            ||| bit r2_3 6 0x19
+            ||| bit r2_3 7 0x18
 
           r
 
@@ -235,24 +640,68 @@ let main argv =
 
   let minX4     = float4_1 minX
   let scaleX4   = float4_1 scaleX
-  let lshiftX4  = float4 0.F 1.F 2.F 3.F
-  let ushiftX4  = float4 4.F 5.F 6.F 7.F
 
-  let mandelbrotSet () =
+  let mandelbrotSet_sse () =
+    let lshiftX4  = float4 0.F 1.F 2.F 3.F
+    let ushiftX4  = float4 4.F 5.F 6.F 7.F
+
     Parallel.For (0, dim / 2, fun hy ->
       let y       = hy*2
       let yoffset = y*width
-      let cy_0    = Float4 (scaleY*(float32 (y    )) + minY)
-      let cy_1    = Float4 (scaleY*(float32 (y + 1)) + minY)
+      let cy_0    = float4_1 (scaleY*(float32 (y    )) + minY)
+      let cy_1    = float4_1 (scaleY*(float32 (y + 1)) + minY)
+      let mutable last_full = false
       for w = 0 to (width - 1) do
         let x     = w*8
-        let x4    = Float4 (float32 x)
+        let x4    = float4_1 (float32 x)
         let cx_0  = minX4 + (x4 + lshiftX4)*scaleX4
         let cx_1  = minX4 + (x4 + ushiftX4)*scaleX4
-        let bits  = Mandelbrot.mandelbrot cx_0 cy_0 cx_1 cy_0 cx_0 cy_1 cx_1 cy_1
-        pixels.[yoffset         + w] <- byte (bits >>> 8)
-        pixels.[yoffset + width + w] <- byte (bits      )
+        let bits  =
+          if last_full then
+            Mandelbrot.mandelbrot_full_sse cx_0 cy_0 cx_1 cy_0 cx_0 cy_1 cx_1 cy_1
+          else
+            Mandelbrot.mandelbrot_sse cx_0 cy_0 cx_1 cy_0 cx_0 cy_1 cx_1 cy_1
+        pixels.[yoffset         + w] <- byte (bits      )
+        pixels.[yoffset + width + w] <- byte (bits >>> 8)
+
+        last_full <- bits <> 0us
       )
+
+  let mandelbrotSet_avx () =
+    let shiftX8 = float8 0.F 1.F 2.F 3.F 4.F 5.F 6.F 7.F
+
+    Parallel.For (0, dim / 4, fun hy ->
+      let y       = hy*4
+      let yoffset = y*width
+      let cy_0    = float4_1 (scaleY*(float32 (y    )) + minY)
+      let cy_1    = float4_1 (scaleY*(float32 (y + 1)) + minY)
+      let cy_2    = float4_1 (scaleY*(float32 (y + 2)) + minY)
+      let cy_3    = float4_1 (scaleY*(float32 (y + 3)) + minY)
+      let mutable last_full = false
+      for w = 0 to (width - 1) do
+        let x     = w*8
+        let x4    = float4_1 (float32 x)
+        let cx_0  = minX4 + (x4 + shiftX8)*scaleX4
+        let bits  =
+          if last_full then
+            Mandelbrot.mandelbrot_full_avx cx_0 cy_0 cx_0 cy_1 cx_0 cy_2 cx_0 cy_3
+          else
+            Mandelbrot.mandelbrot_avx cx_0 cy_0 cx_0 cy_1 cx_0 cy_2 cx_0 cy_3
+        pixels.[yoffset           + w] <- byte (bits       )
+        pixels.[yoffset +   width + w] <- byte (bits >>> 8 )
+        pixels.[yoffset + 2*width + w] <- byte (bits >>> 16)
+        pixels.[yoffset + 3*width + w] <- byte (bits >>> 24)
+
+        last_full <- bits <> 0u
+      )
+
+  let mandelbrotSet =
+    if FloatN.Count = 4 then
+      printfn "Using SSE"
+      mandelbrotSet_sse
+    else
+      printfn "Using AVX2"
+      mandelbrotSet_avx
 
   printfn "Generating mandelbrot set: %dx%d(%d)" dim dim maxIter
   let ms, cc0, cc1, cc2, _ = timeIt mandelbrotSet
