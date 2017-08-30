@@ -22,6 +22,7 @@
 
 #ifdef _MSVC_LANG
 # pragma warning(disable : 4459)
+# include <intrin.h>  
 #endif
 
 namespace

@@ -23,7 +23,7 @@
     <ProjectGuid>{DB146FA6-C115-4558-9BE9-62179988AF5B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>avx</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
