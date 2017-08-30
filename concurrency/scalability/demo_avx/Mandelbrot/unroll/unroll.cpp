@@ -54,23 +54,18 @@
 
 namespace
 {
-#define MANDEL_INDEPENDENT(i)                                         \
+#define MANDEL_COMPUTE(i)                                             \
         xy[i] = _mm256_mul_ps (x[i], y[i]);                           \
         x2[i] = _mm256_mul_ps (x[i], x[i]);                           \
-        y2[i] = _mm256_mul_ps (y[i], y[i]);
-#define MANDEL_DEPENDENT(i)                                           \
-        y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]); \
-        x[i]  = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);
+        y2[i] = _mm256_mul_ps (y[i], y[i]);                           \
+        y[i] = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]), cy[i]);   \
+        x[i] = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]), cx[i]);
 
 #define MANDEL_ITERATION()  \
-  MANDEL_INDEPENDENT(0)     \
-  MANDEL_DEPENDENT(0)       \
-  MANDEL_INDEPENDENT(1)     \
-  MANDEL_DEPENDENT(1)       \
-  MANDEL_INDEPENDENT(2)     \
-  MANDEL_DEPENDENT(2)       \
-  MANDEL_INDEPENDENT(3)     \
-  MANDEL_DEPENDENT(3)
+  MANDEL_COMPUTE(0)     \
+  MANDEL_COMPUTE(1)     \
+  MANDEL_COMPUTE(2)     \
+  MANDEL_COMPUTE(3)
 
 #define MANDEL_CMP(i) \
   _mm256_cmp_ps (_mm256_add_ps (x2[i], y2[i]), _mm256_set1_ps (4.0F), _CMP_LE_OQ)
