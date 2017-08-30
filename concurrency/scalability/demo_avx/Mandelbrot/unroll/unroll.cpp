@@ -24,36 +24,6 @@
 # pragma warning(disable : 4459)
 #endif
 
-#define MANDEL_INDEPENDENT(i)                                     \
-  xy[i] = _mm256_mul_ps (x[i], y[i]);                             \
-  x2[i] = _mm256_mul_ps (x[i], x[i]);                             \
-  y2[i] = _mm256_mul_ps (y[i], y[i]);
-#define MANDEL_DEPENDENT(i)                                       \
-  y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]);   \
-  x[i]  = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);
-
-#define MANDEL_ITERATION()  \
-  MANDEL_INDEPENDENT(0)     \
-  MANDEL_DEPENDENT(0)       \
-  MANDEL_INDEPENDENT(1)     \
-  MANDEL_DEPENDENT(1)       \
-  MANDEL_INDEPENDENT(2)     \
-  MANDEL_DEPENDENT(2)       \
-  MANDEL_INDEPENDENT(3)     \
-  MANDEL_DEPENDENT(3)
-
-#define MANDEL_CMP(i) \
-  _mm256_cmp_ps (_mm256_add_ps (x2[i], y2[i]), _mm256_set1_ps (4.0F), _CMP_LE_OQ)
-
-#define MANDEL_CMPMASK()  \
-  std::uint32_t cmp_mask =                        \
-      (_mm256_movemask_ps (MANDEL_CMP(0))      )  \
-    | (_mm256_movemask_ps (MANDEL_CMP(1)) << 8 )  \
-    | (_mm256_movemask_ps (MANDEL_CMP(2)) << 16)  \
-    | (_mm256_movemask_ps (MANDEL_CMP(3)) << 24)
-
-namespace
-{
 #define MANDEL_COMPUTE(i)                                             \
         xy[i] = _mm256_mul_ps (x[i], y[i]);                           \
         x2[i] = _mm256_mul_ps (x[i], x[i]);                           \
@@ -87,6 +57,8 @@ namespace
     return 0;                                     \
   }
 
+namespace
+{
   MANDEL_INLINE int mandelbrot_avx (__m256 cx[4], __m256 cy[4])
   {
 
