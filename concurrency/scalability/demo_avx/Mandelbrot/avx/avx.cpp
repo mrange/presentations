@@ -35,21 +35,20 @@ namespace
 
     for (auto iter = max_iter; iter > 0; --iter)
     {
-      auto x2         = _mm256_mul_ps  (x, x);
-      auto y2         = _mm256_mul_ps  (y, y);
-      auto r2         = _mm256_add_ps  (x2, y2);
-      auto _4         = _mm256_set1_ps (4.0);
-      auto cmp        = _mm256_cmp_ps  (r2, _4, _CMP_LE_OQ);
-      cmp_mask        = _mm256_movemask_ps (cmp);
+      auto x2         = x*x;
+      auto y2         = y*y;
+      auto r2         = x2 + y2;
+      auto _4         = float8 (4.0F);
+      cmp_mask        = r2 <= _4;
 
       if (!cmp_mask)
       {
         return 0;
       }
 
-      auto xy       = _mm256_mul_ps (x, y);
-      y             = _mm256_add_ps (_mm256_add_ps (xy, xy) , cy);
-      x             = _mm256_add_ps (_mm256_sub_ps (x2, y2) , cx);
+      auto xy       = x*y;
+      y             = xy + xy + cy;
+      x             = x2 - y2 + cx;
     }
 
     return cmp_mask;
@@ -70,7 +69,7 @@ namespace
     auto scalex = (max_x - min_x) / dim;
     auto scaley = (max_y - min_y) / dim;
 
-    auto incx   = _mm256_set_ps (
+    auto incx   = float8 (
         0*scalex
       , 1*scalex
       , 2*scalex
@@ -93,8 +92,8 @@ namespace
       {
         auto x = w << 3;
 
-        __m256 cx = _mm256_add_ps  (_mm256_set1_ps (scalex*x + min_x), incx);
-        __m256 cy = _mm256_set1_ps (scaley*y + min_y);
+        __m256 cx = float8 (scalex*x + min_x) + incx;
+        __m256 cy = float8 (scaley*y + min_y);
 
         auto bits = mandelbrot (cx, cy);
 

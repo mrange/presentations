@@ -24,15 +24,15 @@
 # pragma warning(disable : 4459)
 #endif
 
-#define MANDEL_CMPMASK(i)                                                                     \
-  x2[i] = _mm256_mul_ps  (x[i], x[i]);                                                        \
-  y2[i] = _mm256_mul_ps  (y[i], y[i]);                                                        \
-  cm[i] = _mm256_movemask_ps (_mm256_cmp_ps  (_mm256_add_ps(x2[i], y2[i]), _4, _CMP_LE_OQ));
+#define MANDEL_CMPMASK(i)         \
+  x2[i] = x[i]*x[i];              \
+  y2[i] = y[i]*y[i];              \
+  cm[i] = x2[i] + y2[i] <= _4;
 
-#define MANDEL_NEXT(i)                                                                        \
-  xy[i] = _mm256_mul_ps (x[i], y[i]);                                                         \
-  x [i] = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]) , cx[i]);                               \
-  y [i] = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]) , cy[i]);
+#define MANDEL_NEXT(i)            \
+  xy[i] = x[i]*y[i];              \
+  x [i] = x2[i] - y2[i] + cx[i];  \
+  y [i] = xy[i] + xy[i] + cy[i];
 
 
 namespace
@@ -47,7 +47,7 @@ namespace
 
     for (auto iter = max_iter; iter > 0; --iter)
     {
-      auto _4         = _mm256_set1_ps (4.0);
+      auto _4         = float8 (4.0F);
 
       __m256 x2[simultaneous];
       __m256 y2[simultaneous];
@@ -102,7 +102,7 @@ namespace
     auto scalex = (max_x - min_x) / dim;
     auto scaley = (max_y - min_y) / dim;
 
-    auto incx   = _mm256_set_ps (
+    auto incx   = float8 (
         0*scalex
       , 1*scalex
       , 2*scalex
@@ -113,9 +113,9 @@ namespace
       , 7*scalex
       );
 
-    auto incy1  = _mm256_set1_ps (1*scaley);
-    auto incy2  = _mm256_set1_ps (2*scaley);
-    auto incy3  = _mm256_set1_ps (3*scaley);
+    auto incy1  = float8 (1*scaley);
+    auto incy2  = float8 (2*scaley);
+    auto incy3  = float8 (3*scaley);
 
     auto sdim   = static_cast<int> (dim);
 
@@ -129,11 +129,11 @@ namespace
       {
         auto x = w << 3;
 
-        __m256 cx_ = _mm256_add_ps  (_mm256_set1_ps (scalex*x + min_x), incx);
-        __m256 cy_ = _mm256_set1_ps (scaley*y + min_y);
+        __m256 cx_ = float8 (scalex*x + min_x) + incx;
+        __m256 cy_ = float8 (scaley*y + min_y);
 
-        __m256 cx[simultaneous] = { cx_, cx_                        , cx_                       , cx_                       };
-        __m256 cy[simultaneous] = { cy_, _mm256_add_ps (cy_, incy1) , _mm256_add_ps (cy_, incy2), _mm256_add_ps (cy_, incy3)};
+        __m256 cx[simultaneous] = { cx_, cx_          , cx_         , cx_        };
+        __m256 cy[simultaneous] = { cy_, cy_ + incy1  , cy_ + incy2 , cy_ + incy3};
 
         auto bits = mandelbrot (cx, cy);
 

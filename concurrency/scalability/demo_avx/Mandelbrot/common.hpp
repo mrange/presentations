@@ -143,5 +143,33 @@ namespace
     return std::make_unique<bitmap> (x, y);
   }
 
+  MANDEL_INLINE __m256 __cdecl operator+ (__m256 l, __m256 r) noexcept
+  {
+    return _mm256_add_ps (l, r);
+  }
 
+  MANDEL_INLINE __m256 __cdecl operator- (__m256 l, __m256 r) noexcept
+  {
+    return _mm256_sub_ps (l, r);
+  }
+
+  MANDEL_INLINE __m256 __cdecl operator* (__m256 l, __m256 r) noexcept
+  {
+    return _mm256_mul_ps (l, r);
+  }
+
+  MANDEL_INLINE int __cdecl operator<= (__m256 l, __m256 r) noexcept
+  {
+    return _mm256_movemask_ps (_mm256_cmp_ps (l, r, _CMP_LE_OQ));
+  }
+
+  MANDEL_INLINE __m256 __cdecl float8 (float v) noexcept
+  {
+    return _mm256_set1_ps (v);
+  }
+
+  MANDEL_INLINE __m256 __cdecl float8 (float v0, float v1, float v2, float v3, float v4, float v5, float v6, float v7) noexcept
+  {
+    return _mm256_set_ps (v0, v1, v2, v3, v4, v5, v6, v7);
+  }
 }
