@@ -28,8 +28,8 @@
         xy[i] = _mm256_mul_ps (x[i], y[i]);                           \
         x2[i] = _mm256_mul_ps (x[i], x[i]);                           \
         y2[i] = _mm256_mul_ps (y[i], y[i]);                           \
-        y[i] = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]), cy[i]);   \
-        x[i] = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]), cx[i]);
+        y[i]  = _mm256_add_ps (_mm256_add_ps (xy[i], xy[i]), cy[i]);  \
+        x[i]  = _mm256_add_ps (_mm256_sub_ps (x2[i], y2[i]), cx[i]);
 
 #define MANDEL_ITERATION()  \
   MANDEL_COMPUTE(0)     \
@@ -127,66 +127,52 @@ namespace
 
   bitmap::uptr compute_set (std::size_t const dim)
   {
-    auto set    = create_bitmap (dim, dim);
-    auto width  = set->w;
-    auto pset   = set->bits ();
+    auto set = create_bitmap (dim, dim);
+    auto width = set->w;
+    auto pset = set->bits ();
 
-    auto max_x  = static_cast<float> (::max_x);
-    auto min_x  = static_cast<float> (::min_x);
+    auto sdim = static_cast<int> (dim);
 
-    auto max_y  = static_cast<float> (::max_y);
-    auto min_y  = static_cast<float> (::min_y);
+    auto scale_x = (max_x - min_x) / dim;
+    auto scale_y = (max_y - min_y) / dim;
 
-    auto scalex = (max_x - min_x) / dim;
-    auto scaley = (max_y - min_y) / dim;
-
-    auto incx   = _mm256_set_ps (
-        0*scalex
-      , 1*scalex
-      , 2*scalex
-      , 3*scalex
-      , 4*scalex
-      , 5*scalex
-      , 6*scalex
-      , 7*scalex
-      );
-
-    auto incy1  = _mm256_set1_ps (1*scaley);
-    auto incy2  = _mm256_set1_ps (2*scaley);
-    auto incy3  = _mm256_set1_ps (3*scaley);
-
-    auto sdim   = static_cast<int> (dim);
+    auto min_x_8 = _mm256_set1_ps (min_x);
+    auto scale_x_8 = _mm256_set1_ps (scale_x);
+    auto shift_x_8 = _mm256_set_ps (0, 1, 2, 3, 4, 5, 6, 7);
 
     #pragma omp parallel for schedule(guided)
     for (auto sy = 0; sy < sdim; sy += 4)
     {
-      auto y        = static_cast<std::size_t> (sy);
-      auto yoffset  = y*width;
+      auto y = static_cast<std::size_t> (sy);
 
-      auto last_reached_full  = false;
+      auto cy0 = _mm256_set1_ps (scale_y*y + min_y);
+      auto cy1 = _mm256_add_ps  (cy0, _mm256_set1_ps (1 * scale_y));
+      auto cy2 = _mm256_add_ps  (cy0, _mm256_set1_ps (2 * scale_y));
+      auto cy3 = _mm256_add_ps  (cy0, _mm256_set1_ps (3 * scale_y));
+
+      auto yoffset = width*y;
+
+      auto last_reached_full = false;
 
       for (auto w = 0U; w < width; ++w)
       {
-        auto x = w << 3;
-
-        __m256 cx_ = _mm256_add_ps  (_mm256_set1_ps (scalex*x + min_x), incx);
-        __m256 cy_ = _mm256_set1_ps (scaley*y + min_y);
-
-        __m256 cx[4] = { cx_, cx_                        , cx_                       , cx_                       };
-        __m256 cy[4] = { cy_, _mm256_add_ps (cy_, incy1) , _mm256_add_ps (cy_, incy2), _mm256_add_ps (cy_, incy3)};
-
-        auto bits = 
+        auto x = w * 8;
+        auto x_8 = _mm256_set1_ps (x);
+        auto cx0 = _mm256_add_ps (min_x_8, _mm256_mul_ps (_mm256_add_ps (x_8, shift_x_8), scale_x_8));
+        __m256 cx[] = { cx0, cx0, cx0, cx0 };
+        __m256 cy[] = { cy0, cy1, cy2, cy3 };
+        auto bits2 =
           last_reached_full
-            ? mandelbrot_avx_full (cx, cy)
-            : mandelbrot_avx (cx, cy)
-            ;
+          ? mandelbrot_avx_full (cx, cy)
+          : mandelbrot_avx (cx, cy)
+          ;
 
-        pset[yoffset            + w] = static_cast<std::uint8_t> (bits      );
-        pset[yoffset + 1*width  + w] = static_cast<std::uint8_t> (bits >> 8 );
-        pset[yoffset + 2*width  + w] = static_cast<std::uint8_t> (bits >> 16);
-        pset[yoffset + 3*width  + w] = static_cast<std::uint8_t> (bits >> 24);
+        pset[yoffset + w] = 0xFF & bits2;
+        pset[yoffset + 1 * width + w] = 0xFF & (bits2 >> 8);
+        pset[yoffset + 2 * width + w] = 0xFF & (bits2 >> 16);
+        pset[yoffset + 3 * width + w] = 0xFF & (bits2 >> 24);
 
-        last_reached_full = bits != 0;
+        last_reached_full = bits2 != 0;
       }
     }
 

@@ -98,8 +98,8 @@ namespace
       , y   (y)
       , w   ((x + 7) / 8)
       , sz  (w*y)
+      , b   (static_cast<std::uint8_t*> (malloc(sz)))
     {
-      b = static_cast<std::uint8_t*> (malloc(sz));
     }
 
     ~bitmap () noexcept
