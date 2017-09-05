@@ -1,0 +1,14 @@
+Reference: 24.2 sec, iterations: 6248109921, flops: 56,232,989,289 => 2.3 GigaFlop/s
+Referencex4: 3.7 sec => 6.5x => 15 GigaFlops/s
+
+AVX: 0.49 sec => 49x => 114 GigaFlops/s
+AVX4: 0.39 sec => 62x => 143 GigaFlops/s
+
+Reference DNC: 24.6 sec
+
+AVX4_DNC: 0.76 sec => 32x => 73 GigaFlops/s
+But this uses SSE which is by nature twice as slow AVX 
+
+Unroll: 0.29 sec => 83x => 193 GigaFlops/s
+Unroll_DNC: 0.422 sec => 57x => 132 GigaFlops/s
+
