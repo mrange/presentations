@@ -21,7 +21,8 @@ module Turtle =
                       | Lime
                       | MediumVioletRed
 
-    type DrawLine   = Color->float32->Vector2->Vector2->unit
+    type DrawLine     = Color->float32->Vector2->Vector2->unit
+    type OptDrawLine  = OptimizedClosures.FSharpFunc<Color, float32, Vector2, Vector2, unit>
 
     type State =
         {
@@ -29,12 +30,18 @@ module Turtle =
             Width       : float32
             Position    : Vector2
             Direction   : Vector2
-            DrawLine    : DrawLine
+            DrawLine    : OptDrawLine
         }
-        static member New c w p d dl =
-            {Color = c; Width = w; Position = p; Direction = Normalize d; DrawLine = dl;}
         static member UnsafeNew c w p d dl =
-            {Color = c; Width = w; Position = p; Direction = d; DrawLine = dl;}
+            {
+                Color     = c
+                Width     = w
+                Position  = p
+                Direction = d
+                DrawLine  = dl
+            }
+        static member New c w p d dl =
+            State.UnsafeNew c w p (Normalize d) (OptimizedClosures.FSharpFunc<_, _, _, _, _>.Adapt dl)
 
     type Result<'T> (v: 'T, s: State) =
         struct
@@ -59,8 +66,6 @@ module Turtle =
         fun s ->
             let m = l s
             r m.State
-
-    let Zero ()                                             : Movement<unit>    = fun s ->   Result<_>.New () s
 
     let For (seq : seq<'T>) (r : 'T -> Movement<unit>)      : Movement<unit> =
         fun s ->
@@ -104,7 +109,7 @@ module Turtle =
         fun s ->
             let p = s.Position + v*s.Direction
             let ss = State.UnsafeNew s.Color s.Width p s.Direction s.DrawLine
-            ss.DrawLine s.Color s.Width s.Position p
+            ss.DrawLine.Invoke (s.Color, s.Width, s.Position, p)
             Result<_>.New () ss
 
     let Execute (c : Color) (w : float32) (p : Vector2) (d : Vector2) (dl : DrawLine) (t : Movement<'T>) =
@@ -116,7 +121,7 @@ module Turtle =
 
         type TurtleBuilder () =
             member inline x.Return (value)         = Return value
-            member inline x.Zero ()                = Zero
+            member inline x.Zero ()                = Return ()
             member inline x.ReturnFrom (value)     = value : Movement<'T>
             member inline x.Bind (func, comp)      = Bind func comp
             member inline x.Combine (expr1, expr2) = Combine expr1 expr2

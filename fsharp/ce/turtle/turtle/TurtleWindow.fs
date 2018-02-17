@@ -22,7 +22,7 @@ open TurtlePower
 
 module TurtleWindow =
 
-    type Line =
+    type [<Struct>] Line =
         {
             Color   : Turtle.Color
             Width   : float32

@@ -58,9 +58,7 @@ module SimpleTreeFractal =
 
     let rec Generate n v time =
         turtle {
-            if n <= 0 then
-                return ()
-            else
+            if n > 0 then
                 do! Width 6.0F
 
                 // Step 1
@@ -88,9 +86,7 @@ module TreeFractal =
         }
     and Generate n v time =
         turtle {
-            if n <= 0 then
-                return ()
-            else
+            if n > 0 then
                 let c =
                     match n with
                     | _ when n < 3  -> Lime
@@ -164,9 +160,7 @@ module WavingSimpleTreeFractal =
         }
     and Generate n v time =
         turtle {
-            if n <= 0 then
-                return ()
-            else
+            if n > 0 then
                 let turn = 20.F
                 let c =
                     match n with
@@ -234,9 +228,7 @@ module OtherTreeFractal =
         }
     and Generate n v time =
         turtle {
-            if n <= 0 then
-                return ()
-            else
+            if n > 0 then
                 let c =
                     match n with
                     | _ when n < 3  -> Lime

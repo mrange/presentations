@@ -24,8 +24,9 @@ let main argv =
     let turtleGenerator = SimpleBox.Generate                    500.F
     let turtleGenerator = SimpleTreeFractal.Generate        10  250.F
     let turtleGenerator = TreeFractal.Generate              10  250.F
-    let turtleGenerator = TreeFractal.Generate              10  250.F
+    let turtleGenerator = WavingSimpleTreeFractal.Generate  10  250.F
     let turtleGenerator = WavingTreeFractal.Generate        10  250.F
+
     let turtleGenerator = WavingSimpleTreeFractal.Generate  10  250.F
 
     TurtleWindow.Show turtleGenerator
