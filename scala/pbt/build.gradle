@@ -9,11 +9,15 @@
 plugins {
     // Apply the scala plugin to add support for Scala
     id 'scala'
+    id 'application'
 }
+
+mainClassName = 'RedBlackTree.TreeSpecification'
 
 dependencies {
     // Use Scala 2.11 in our library project
     compile 'org.scala-lang:scala-library:2.11.8'
+    compile 'org.scalacheck:scalacheck_2.11:1.13.5'
 
     // Use Scalatest for testing our library
     testCompile 'junit:junit:4.12'

@@ -1,6 +1,13 @@
+package RedBlackTree
+
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Properties
+
+
 object Color extends Enumeration {
   val Black, Red = Value
 }
+
 
 trait Tree[K, V] {
   val ord: Ordering[K]
@@ -97,6 +104,8 @@ object Tree {
   }
 }
 
-class Library {
-  def someLibraryMethod(): Boolean = true
+object TreeSpecification extends Properties("Tree") {
+  property("startsWith") = forAll { (a: String, b: String) =>
+    (a+b).startsWith(a)
+  }
 }
