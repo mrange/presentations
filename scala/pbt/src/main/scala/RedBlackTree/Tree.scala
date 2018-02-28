@@ -3,11 +3,9 @@ package RedBlackTree
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Properties
 
-
 object Color extends Enumeration {
   val Black, Red = Value
 }
-
 
 trait Tree[K, V] {
   val ord: Ordering[K]
@@ -105,7 +103,25 @@ object Tree {
 }
 
 object TreeSpecification extends Properties("Tree") {
-  property("startsWith") = forAll { (a: String, b: String) =>
-    (a+b).startsWith(a)
+  def distinctByKey[K, V](vs: List[(K, V)]): List[(K, V)] = {
+    val s = vs.foldLeft((Set.empty[K], List.empty[(K, V)]))((s, v) => {
+      if (s._1(v._1)) {
+        s
+      } else {
+        (s._1 + v._1, v::s._2)
+      }
+    })
+    s._2.reverse
+  }
+
+
+  property("Tree depth is at most 2[log2 (n + 1)]") = forAll { (vs: List[(Int, Int)]) =>
+    def log2(v: Double) = Math.log(v) / Math.log(2.0)
+
+    val dvs = distinctByKey(vs)
+    val t = Tree.fromList(dvs)
+    val d = t.depth
+
+    d.toDouble <= 2.0* log2((dvs.length + 1).toDouble)
   }
 }
