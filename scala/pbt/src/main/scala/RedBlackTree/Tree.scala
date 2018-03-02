@@ -10,13 +10,13 @@ object Color extends Enumeration {
 trait Tree[K, V] {
   val ord: Ordering[K]
 
+  protected def colorBlack: Tree[K, V]
+
+  protected def doSet(key: K, value: V): Tree[K, V]
+
   def depth: Int
 
   def lookup(key: K): Option[V]
-
-  def blackify: Tree[K, V]
-
-  def setImpl(key: K, value: V): Tree[K, V]
 
   def foldLeft[S](z: S)(f: (S, K, V) => S): S
 
@@ -27,7 +27,7 @@ trait Tree[K, V] {
   }
 
   def set(key: K, value: V): Tree[K, V] = {
-    this.setImpl(key, value).blackify
+    this.doSet(key, value).colorBlack
   }
 }
 
@@ -36,9 +36,9 @@ case class Leaf[K, V](implicit val ord: Ordering[K]) extends Tree[K, V] {
 
   override def lookup(key: K): Option[V] = None
 
-  override def blackify: Tree[K, V] = this
+  override def colorBlack: Tree[K, V] = this
 
-  override def setImpl(key: K, value: V): Tree[K, V] = Node(Color.Red, Tree.leaf, key, value, Tree.leaf, ord)
+  override def doSet(key: K, value: V): Tree[K, V] = Node(Color.Red, Tree.leaf, key, value, Tree.leaf, ord)
 
   override def foldLeft[S](z: S)(f: (S, K, V) => S): S = z
 }
@@ -59,29 +59,27 @@ case class Node[K, V](color: Color.Value, left: Tree[K, V], key: K, value: V, ri
   override def depth: Int = Math.max(left.depth, right.depth) + 1
 
   override def lookup(key: K): Option[V] = {
-    val c = ord.compare(key, this.key)
-    if (c < 0) {
+    if (ord.lt(key, this.key)) {
       left.lookup(key)
-    } else if (c > 0) {
+    } else if (ord.lt(this.key, key)) {
       right.lookup(key)
     } else {
       Some(this.value)
     }
   }
 
-  override def blackify: Tree[K, V] =
+  override def colorBlack: Tree[K, V] =
     if (this.color == Color.Red) {
       this.copy(color = Color.Black)
     } else {
       this
     }
 
-  override def setImpl(key: K, value: V): Tree[K, V] = {
-    val c = ord.compare(key, this.key)
-    if (c < 0) {
-      this.copy(left = this.left.setImpl(key, value)).balance
-    } else if (c > 0) {
-      this.copy(right = this.right.setImpl(key, value)).balance
+  override def doSet(key: K, value: V): Tree[K, V] = {
+    if (ord.lt(key, this.key)) {
+      this.copy(left = this.left.doSet(key, value)).balance
+    } else if (ord.lt(this.key, key)) {
+      this.copy(right = this.right.doSet(key, value)).balance
     } else {
       this.copy(key = key, value = value)
     }
@@ -152,7 +150,7 @@ object TreeSpecification extends Properties("Tree") {
       (100, Double.MinPositiveValue),
       (100, Double.PositiveInfinity),
       (100, Double.NegativeInfinity)
-      //(100, Double.NaN) // TODO: Investigate why NaN don't fail more tests
+      //(100, Double.NaN) // TODO: Investigate why NaN don't fail more tests,
     )
     val doubles = genFor[Double]
     val doubleKeys: Gen[Key] = Gen.frequency((100, specificDoubles), (100, doubles)).map(Key.DoubleKey)
@@ -171,6 +169,19 @@ object TreeSpecification extends Properties("Tree") {
     })
     s._2.reverse
   }
+
+  property("distinctByKey should preserve first distinct key value pair") =
+    forAll { (vs: List[(Int, Int)]) =>
+      val evs = vs
+        .groupBy(_._1).toList
+        .map { case (k, v) => (k, v.head._2)}
+        .sortBy(_._1)
+
+      val avs = distinctByKey(vs)
+        .sortBy(_._1)
+
+      evs == avs
+    }
 
   property("§1 - Tree is immutable") =
     forAll { (vs: List[(Key, Int)]) =>
@@ -204,13 +215,13 @@ object TreeSpecification extends Properties("Tree") {
           case Node(_, l, k, _, r, ord) =>
             val lc = l match {
               case Node(_, _, lk, _, _, _) =>
-                ord.compare(lk, k) < 0
+                ord.lt(lk, k)
               case _ => true
             }
 
             val rc = r match {
               case Node(_, _, rk, _, _, _) =>
-                ord.compare(rk, k) > 0
+                ord.lt(k, rk)
               case _ => true
             }
 
