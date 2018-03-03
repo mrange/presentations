@@ -12,7 +12,7 @@ plugins {
     id 'application'
 }
 
-mainClassName = 'RedBlackTree.TreeSpecification'
+mainClassName = 'RedBlackTree.Main'
 
 dependencies {
     // Use Scala 2.11 in our library project
