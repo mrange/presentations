@@ -26,6 +26,22 @@ trait Tree[K, V] {
   def set(key: K, value: V): Tree[K, V] = {
     this.doSet(key, value).colorBlack
   }
+
+  override def toString = {
+    val sb = StringBuilder.newBuilder
+    sb.append("Tree(")
+    this.foldLeft(true) { (first, k, v) =>
+      if (!first) {
+        sb.append(", ")
+      }
+      sb.append(k)
+      sb.append(" -> ")
+      sb.append(v)
+      false
+    }
+    sb.append(")")
+    sb.toString
+  }
 }
 
 case class Leaf[K, V](implicit val ord: Ordering[K]) extends Tree[K, V] {

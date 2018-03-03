@@ -1,7 +1,6 @@
 package RedBlackTree
 
 import RedBlackTree.NonCohesive.distinctByKey
-import RedBlackTree.TreeSpecification.property
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Arbitrary, Gen, Properties, Test}
 
@@ -25,7 +24,7 @@ object Key {
 
   def genFor[T](implicit arb: Arbitrary[T]): Gen[T] = arb.arbitrary
 
-  implicit val keyOrdering: Ordering[Key] = new Ordering[Key] {
+  val keyOrdering: Ordering[Key] = new Ordering[Key] {
     override def compare(x: Key, y: Key): Int = {
       (x, y) match {
         case (Key.IntKey(lk), Key.IntKey(rk)) => lk.compareTo(rk)
@@ -36,26 +35,30 @@ object Key {
     }
   }
 
-  implicit val keyArbitrary: Arbitrary[Key] = {
-    val intKeys: Gen[Key] = genFor[Int].map(Key.IntKey)
+  val doubleArbitrary: Arbitrary[Double] = {
     val specificDoubles = Gen.frequency[Double](
       (100, 0.0),
       (100, 1.0),
       (100, -1.0),
-      (100, -0.0),
-      (100, Double.MinValue),
-      (100, Double.MinPositiveValue),
-      (100, Double.PositiveInfinity),
-      (100, Double.NegativeInfinity)
-      //(100, Double.NaN) // TODO: Investigate why NaN don't fail more tests,
+      (10, -0.0), // Negative zero is a thing in IEEE doubles
+      (10, Double.MinValue),
+      (10, Double.MinPositiveValue),
+      (10, Double.PositiveInfinity),
+      (10, Double.NegativeInfinity)/*
+      (10, Double.NaN)*/
     )
     val doubles = genFor[Double]
-    val doubleKeys: Gen[Key] = Gen.frequency((100, specificDoubles), (100, doubles)).map(Key.DoubleKey)
-    val stringKeys: Gen[Key] = genFor[String].map(Key.StringKey)
-    val keys = Gen.oneOf(intKeys, doubleKeys, stringKeys)
-    Arbitrary(keys)
+    val gen: Gen[Double] = Gen.frequency((100, specificDoubles), (100, doubles))
+    Arbitrary(gen)
   }
 
+  val keyArbitrary: Arbitrary[Key] = {
+    val intKeys: Gen[Key] = genFor[Int].map(Key.IntKey)
+    val doubleKeys: Gen[Key] = doubleArbitrary.arbitrary.map(Key.DoubleKey)
+    val stringKeys: Gen[Key] = genFor[String].map(Key.StringKey)
+    val gen = Gen.oneOf(intKeys, doubleKeys, stringKeys)
+    Arbitrary(gen)
+  }
 }
 
 object NonCohesive {
@@ -89,8 +92,8 @@ object NonCohesiveSpecification extends Properties("NonCohesive") {
 object Main {
   def main(argv: Array[String]) = {
     val params = Test.Parameters.default.withMinSuccessfulTests(1000)
+
     NonCohesiveSpecification.check(params)
     TreeSpecification.check(params)
   }
 }
-

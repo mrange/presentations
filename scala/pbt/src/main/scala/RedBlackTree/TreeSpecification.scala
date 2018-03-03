@@ -2,23 +2,26 @@ package RedBlackTree
 
 import RedBlackTree.NonCohesive._
 import org.scalacheck.Prop.forAll
-import org.scalacheck.{Properties, Test}
+import org.scalacheck.{Arbitrary, Properties}
+
+import scala.annotation.tailrec
 
 object TreeSpecification extends Properties("Tree") {
+
+  implicit val keyOrdering: Ordering[Key] = Key.keyOrdering
+  implicit val doubleArbitrary: Arbitrary[Double] = Key.doubleArbitrary
+  implicit val keyArbitrary: Arbitrary[Key] = Key.keyArbitrary
 
   property("§1 - Tree is immutable") =
     forAll { (vs: List[(Key, Int)]) =>
       val dvs = distinctByKey(vs)
-      if (dvs.nonEmpty) {
-        val (k, v) = dvs.head
-        val tail = dvs.tail
+      dvs match {
+        case (k,v)::tail =>
+          val t = Tree.fromList(tail)
+          val nt = t.set(k, v)
 
-        val t = Tree.fromList(tail)
-        val nt = t.set(k, v)
-
-        t.lookup(k).isEmpty && nt.lookup(k).contains(v)
-      } else {
-        true
+          t.lookup(k).isEmpty && nt.lookup(k).contains(v)
+        case _ => true
       }
     }
 
@@ -27,6 +30,22 @@ object TreeSpecification extends Properties("Tree") {
       val t = Tree.fromList(vs)
       val nt = t.set(k, v)
       nt.lookup(k).contains(v)
+    }
+
+  property("§2.1 - Lookup for all elements shall succeed") =
+    forAll { (vs: List[(Key, Int)]) =>
+      val dvs = distinctByKey(vs)
+
+      val t = Tree.fromList(dvs)
+
+      @tailrec def loop(kvs: List[(Key, Int)]): Boolean = {
+        kvs match {
+          case (k, v)::tail => t.lookup(k).contains(v) && loop(tail)
+          case _ => true
+        }
+      }
+
+      loop(dvs)
     }
 
   property("§4 - Parent key is greater than left child, smaller than right child") =
