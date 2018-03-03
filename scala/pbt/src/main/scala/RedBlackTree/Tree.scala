@@ -7,9 +7,9 @@ object Color extends Enumeration {
 trait Tree[K, V] {
   val ord: Ordering[K]
 
-  protected[RedBlackTree] def colorBlack: Tree[K, V]
+  private[RedBlackTree] def colorBlack: Tree[K, V]
 
-  protected[RedBlackTree] def doSet(key: K, value: V): Tree[K, V]
+  private[RedBlackTree] def doSet(key: K, value: V): Tree[K, V]
 
   def depth: Int
 
@@ -35,7 +35,7 @@ case class Leaf[K, V](implicit val ord: Ordering[K]) extends Tree[K, V] {
 
   override def colorBlack: Tree[K, V] = this
 
-  override def doSet(key: K, value: V): Tree[K, V] = Node(Color.Red, Tree.leaf, key, value, Tree.leaf, ord)
+  override def doSet(key: K, value: V): Tree[K, V] = Node(Color.Red, Tree.empty, key, value, Tree.empty, ord)
 
   override def foldLeft[S](z: S)(f: (S, K, V) => S): S = z
 }
@@ -51,7 +51,6 @@ case class Node[K, V](color: Color.Value, left: Tree[K, V], key: K, value: V, ri
       case _ => this
     }
   }
-
 
   override def depth: Int = Math.max(left.depth, right.depth) + 1
 
@@ -90,10 +89,10 @@ case class Node[K, V](color: Color.Value, left: Tree[K, V], key: K, value: V, ri
 }
 
 object Tree {
-  def leaf[K, V](implicit ord: Ordering[K]): Leaf[K, V] = Leaf()
+  def empty[K, V](implicit ord: Ordering[K]): Tree[K, V] = Leaf()
 
   def fromList[K, V](vs: List[(K, V)])(implicit ord: Ordering[K]): Tree[K, V] = {
-    vs.foldLeft[Tree[K, V]](leaf)((s, v) => s.set(v._1, v._2))
+    vs.foldLeft[Tree[K, V]](empty)((s, v) => s.set(v._1, v._2))
   }
 }
 

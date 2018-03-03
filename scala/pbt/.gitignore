@@ -2,4 +2,6 @@
 .gradle/
 .vs/
 build/
+out/
+
 
