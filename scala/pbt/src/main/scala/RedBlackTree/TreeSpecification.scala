@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 
 object TreeSpecification extends Properties("Tree") {
 
-    implicit val doubleArbitrary: Arbitrary[Double] = NonCohesive.doubleArbitrary
+  implicit val doubleArbitrary: Arbitrary[Double] = NonCohesive.doubleArbitrary
 
 //  implicit val keyOrdering: Ordering[Key] = Key.keyOrdering
 //  implicit val keyArbitrary: Arbitrary[Key] = Key.keyArbitrary

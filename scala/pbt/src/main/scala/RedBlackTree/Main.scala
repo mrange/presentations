@@ -56,6 +56,6 @@ object Main {
     val params = Test.Parameters.default.withMinSuccessfulTests(1000)
 
     NonCohesiveSpecification.check(params)
-//    TreeSpecification.check(params)
+    TreeSpecification.check(params)
   }
 }
