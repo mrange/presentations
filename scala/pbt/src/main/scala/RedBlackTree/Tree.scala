@@ -4,7 +4,7 @@ object Color extends Enumeration {
   val Black, Red = Value
 }
 
-trait Tree[K, V] {
+sealed trait Tree[K, V] {
   val ord: Ordering[K]
 
   private[RedBlackTree] def colorBlack: Tree[K, V]
@@ -27,7 +27,7 @@ trait Tree[K, V] {
     this.doSet(key, value).colorBlack
   }
 
-  override def toString = {
+  override def toString: String = {
     val sb = StringBuilder.newBuilder
     sb.append("Tree(")
     this.foldLeft(true) { (first, k, v) =>

@@ -18,6 +18,7 @@ dependencies {
     // Use Scala 2.11 in our library project
     compile 'org.scala-lang:scala-library:2.11.8'
     compile 'org.scalacheck:scalacheck_2.11:1.13.5'
+    compile 'com.github.alexarchambault:scalacheck-shapeless_1.13_2.11:1.1.8'
 }
 
 // In this section you declare where to find the dependencies of your project
