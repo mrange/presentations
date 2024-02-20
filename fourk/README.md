@@ -10,3 +10,7 @@
 ## Externals
 
 1. Depends
+    https://dependencywalker.com/
+    Don't seem to work anymore?
+2. PPPE
+    https://www.mzrst.com/
