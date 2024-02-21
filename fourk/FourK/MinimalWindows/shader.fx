@@ -1,103 +1,3 @@
-#pragma once
-
-#define WIN32_LEAN_AND_MEAN
-#define WIN32_EXTRA_LEAN
-#define WINDOWS_IGNORE_PACKING_MISMATCH
-
-#include "assert.h"
-
-#ifdef _DEBUG
-#include <stdio.h>
-#endif
-
-#include <windows.h>
-#include <winuser.h>
-#include <mmsystem.h>
-#include <mmreg.h>
-
-#include <GL/gl.h>
-#include "glext.h"
-
-//#define USE_MINI
-
-#define XRES 1920
-#define YRES 1080
-
-extern "C" {
-  LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-  #pragma data_seg(".fltused")
-  int  _fltused = 0;
-
-  #pragma data_seg(".windowRect")
-  static RECT windowRect {
-    0
-  , 0
-  , XRES
-  , YRES
-  };
-
-  #pragma data_seg(".pixelFormatDescriptor")
-  static PIXELFORMATDESCRIPTOR pixelFormatSpecification {
-      sizeof(PIXELFORMATDESCRIPTOR)                           // nSize
-    , 1                                                       // nVersion
-    , PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER  // dwFlags
-    , PFD_TYPE_RGBA                                           // iPixelType
-    , 32                                                      // cColorBits
-    , 0                                                       // cRedBits
-    , 0                                                       // cRedShift
-    , 0                                                       // cGreenBits
-    , 0                                                       // cGreenShift
-    , 0                                                       // cBlueBits
-    , 0                                                       // cBlueShift
-    , 8                                                       // cAlphaBits
-    , 0                                                       // cAlphaShift
-    , 0                                                       // cAccumBits
-    , 0                                                       // cAccumRedBits
-    , 0                                                       // cAccumGreenBits
-    , 0                                                       // cAccumBlueBits
-    , 0                                                       // cAccumAlphaBits
-    , 32                                                      // cDepthBits
-    , 0                                                       // cStencilBits
-    , 0                                                       // cAuxBuffers
-    , PFD_MAIN_PLANE                                          // iLayerType
-    , 0                                                       // bReserved
-    , 0                                                       // dwLayerMask
-    , 0                                                       // dwVisibleMask
-    , 0                                                       // dwDamageMask
-  };
-
-  #pragma data_seg(".windowClassSpecification")
-  WNDCLASSA windowClassSpecification {
-        CS_OWNDC | CS_HREDRAW | CS_VREDRAW  // style
-      , &WndProc                            // lpfnWndProc
-      , 0                                   // cbClsExtra
-      , 0                                   // cbWndExtra
-      , 0                                   // hInstance
-      , 0                                   // hIcon
-      , 0                                   // hCursor
-      , 0                                   // hbrBackground
-      , 0                                   // lpszMenuName
-      , "DEMO"                             // lpszClassName
-  };
-
-  #pragma data_seg(".glCreateShaderProgramv")
-  const char nm_glCreateShaderProgramv[] = "glCreateShaderProgramv";
-
-  #pragma data_seg(".glUseProgram")
-  static const char nm_glUseProgram[] = "glUseProgram";
-
-  #pragma data_seg(".glUniform4f")
-  static const char nm_glUniform4f[] = "glUniform4f";
-
-  #pragma code_seg(".fragmentShaderProgram")
-  GLint fragmentShaderProgram;
-
-#ifdef USE_MINI
-#include "shader.h"
-#else
-  #pragma code_seg(".shader_fx")
-  GLchar const shader_fx[] = R"FS(
 #version 430
 #define TIME        S.x
 #define RESOLUTION  S.yz
@@ -217,7 +117,7 @@ vec3 palette( float t ) {
 vec3 kishimisu(vec3 col, vec2 p, float tm, float n) {
   vec2 p0 = p;
   vec3 finalColor = vec3(0.0);
-    
+
   vec2 p1 = p;
   for (float i = 0.0; i < 4.0; i++) {
     p1 = fract(p1 * 2.0+0.0125*tm) - 0.5;
@@ -237,7 +137,7 @@ vec3 kishimisu(vec3 col, vec2 p, float tm, float n) {
     col += cc * d;
   }
 
-  return 0.5*(col);  
+  return 0.5*(col);
 }
 
 vec3 effect(vec2 p, float tm, float n) {
@@ -258,11 +158,11 @@ vec4 plane(vec3 ro, vec3 rd, vec3 pp, vec3 off, float aa, float n) {
   float l = length(p);
   p *= mix(0.5, 0.75, 0.5+0.5*sin(n*0.071));
   float tm = 0.5*0.125*TIME+0.125*n;
-  p *= ROT(-tm);  
+  p *= ROT(-tm);
   float fade = smoothstep(0.1, 0.15, l);
   if (fade < 0.05) return vec4(0.0);
   vec4 col = vec4(0.0);
-  
+
   col.xyz = effect(p, tm, n);
   float i = max(max(col.x, col.y), col.z)*0.75;
   col.w = (tanh_approx(0.5+l+max((i), 0.0))*fade);
@@ -275,7 +175,7 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   const float rdd_per   = 10.0;
   float rdd =  (1.75+0.75*pow(lp,1.5)*tanh_approx(lp+0.9*PCOS(rdd_per*p.x)*PCOS(rdd_per*p.y)));
 //  float rdd = 2.0;
-  
+
   vec3 rd = normalize(p.x*uu + p.y*vv + rdd*ww);
   vec3 nrd = normalize(np.x*uu + np.y*vv + rdd*ww);
 
@@ -290,7 +190,7 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
 
   float maxpd = 0.0;
 
-  // Steps from nearest to furthest plane and accumulates the color 
+  // Steps from nearest to furthest plane and accumulates the color
   for (int i = 1; i <= furthest; ++i) {
     float pz = planeDist*nz + planeDist*float(i);
 
@@ -323,7 +223,7 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   }
 
   vec3 col = alphaBlend(skyCol, acol);
-// To debug cutouts due to transparency  
+// To debug cutouts due to transparency
 //  col += cutOut ? vec3(1.0, -1.0, 0.0) : vec3(0.0);
   return col;
 }
@@ -352,14 +252,6 @@ void main() {
   p.x *= RESOLUTION.x/RESOLUTION.y;
 
   vec3 col = effect(p, pp);
-  
+
   fcol = vec4(col, 1.0);
 }
-)FS";
-#endif
-
-  #pragma code_seg(".fragmentShaders")
-  char const * fragmentShaders[] = {shader_fx};
-
-}
-

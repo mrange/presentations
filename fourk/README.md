@@ -14,3 +14,6 @@
     Don't seem to work anymore?
 2. PPPE
     https://www.mzrst.com/
+
+
+..\shader_minifier.exe .\shader.fx --no-renaming-list main,S -o shader.h
