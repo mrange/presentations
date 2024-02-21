@@ -16,4 +16,4 @@
     https://www.mzrst.com/
 
 
-..\shader_minifier.exe .\shader.fx --no-renaming-list main,S -o shader.h
+..\shader_minifier.exe .\shader.fx -o shader.h

@@ -99,25 +99,31 @@ extern "C" {
   #pragma code_seg(".shader_fx")
   GLchar const shader_fx[] = R"FS(
 #version 430
-#define TIME        S.x
-#define RESOLUTION  S.yz
 
-uniform vec4 S;
+uniform vec4 state;
 out vec4 fcol;
 
-
-
-#define PI          3.141592654
-#define PI_2        (0.5*PI)
-#define TAU         (2.0*PI)
-#define ROT(a)      mat2(cos(a), sin(a), -sin(a), cos(a))
-#define BPM         (143.0*0.5)
-#define PCOS(a)     0.5*(cos(a)+1.0)
-
+const float PI        = acos(-1);
+const float PI_2      = .5*PI;
+const float TAU       = 2*PI;
 const float planeDist = 1.0-0.75;
 const int   furthest  = 12;
 const int   fadeFrom  = max(furthest-4, 0);
 const float fadeDist  = planeDist*float(furthest - fadeFrom);
+
+float getTime() {
+  return state.x;
+}
+
+vec2 getRes() {
+  return state.yz;
+}
+
+mat2 rot(float a) {
+  float c = cos(a);
+  float s = sin(a);
+  return mat2(c,s,-s,c);
+}
 
 // License: Unknown, author: Unknown, found: don't remember
 vec4 alphaBlend(vec4 back, vec4 front) {
@@ -217,7 +223,7 @@ vec3 palette( float t ) {
 vec3 kishimisu(vec3 col, vec2 p, float tm, float n) {
   vec2 p0 = p;
   vec3 finalColor = vec3(0.0);
-    
+
   vec2 p1 = p;
   for (float i = 0.0; i < 4.0; i++) {
     p1 = fract(p1 * 2.0+0.0125*tm) - 0.5;
@@ -237,7 +243,7 @@ vec3 kishimisu(vec3 col, vec2 p, float tm, float n) {
     col += cc * d;
   }
 
-  return 0.5*(col);  
+  return 0.5*(col);
 }
 
 vec3 effect(vec2 p, float tm, float n) {
@@ -257,25 +263,29 @@ vec4 plane(vec3 ro, vec3 rd, vec3 pp, vec3 off, float aa, float n) {
   vec2 p = (pp-off*vec3(1.0, 1.0, 0.0)).xy;
   float l = length(p);
   p *= mix(0.5, 0.75, 0.5+0.5*sin(n*0.071));
-  float tm = 0.5*0.125*TIME+0.125*n;
-  p *= ROT(-tm);  
+  float tm = 0.5*0.125*getTime()+0.125*n;
+  p *= rot(-tm);
   float fade = smoothstep(0.1, 0.15, l);
   if (fade < 0.05) return vec4(0.0);
   vec4 col = vec4(0.0);
-  
+
   col.xyz = effect(p, tm, n);
   float i = max(max(col.x, col.y), col.z)*0.75;
   col.w = (tanh_approx(0.5+l+max((i), 0.0))*fade);
   return col;
 }
 
+float pcos(float a) {
+  return 0.5+0.5*cos(a);
+}
+
 vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   float lp = length(p);
-  vec2 np = p + 1.0/RESOLUTION.xy;
+  vec2 np = p + 1.0/getRes().xy;
   const float rdd_per   = 10.0;
-  float rdd =  (1.75+0.75*pow(lp,1.5)*tanh_approx(lp+0.9*PCOS(rdd_per*p.x)*PCOS(rdd_per*p.y)));
+  float rdd =  (1.75+0.75*pow(lp,1.5)*tanh_approx(lp+0.9*pcos(rdd_per*p.x)*pcos(rdd_per*p.y)));
 //  float rdd = 2.0;
-  
+
   vec3 rd = normalize(p.x*uu + p.y*vv + rdd*ww);
   vec3 nrd = normalize(np.x*uu + np.y*vv + rdd*ww);
 
@@ -290,7 +300,7 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
 
   float maxpd = 0.0;
 
-  // Steps from nearest to furthest plane and accumulates the color 
+  // Steps from nearest to furthest plane and accumulates the color
   for (int i = 1; i <= furthest; ++i) {
     float pz = planeDist*nz + planeDist*float(i);
 
@@ -323,13 +333,13 @@ vec3 color(vec3 ww, vec3 uu, vec3 vv, vec3 ro, vec2 p) {
   }
 
   vec3 col = alphaBlend(skyCol, acol);
-// To debug cutouts due to transparency  
+// To debug cutouts due to transparency
 //  col += cutOut ? vec3(1.0, -1.0, 0.0) : vec3(0.0);
   return col;
 }
 
 vec3 effect(vec2 p, vec2 pp) {
-  float tm  = planeDist*TIME*BPM/60.0;
+  float tm  = planeDist*getTime();
   vec3 ro   = offset(tm);
   vec3 dro  = doffset(tm);
   vec3 ddro = ddoffset(tm);
@@ -339,20 +349,21 @@ vec3 effect(vec2 p, vec2 pp) {
   vec3 vv = cross(ww, uu);
 
   vec3 col = color(ww, uu, vv, ro, p);
-  col *= smoothstep(0.0, 4.0, TIME);
+  col *= smoothstep(0.0, 4.0, getTime());
   col = clamp(col, 0.0, 1.0);
   col = sqrt(col);
   return col;
 }
 
 void main() {
-  vec2 q = gl_FragCoord.xy/RESOLUTION.xy;
+  vec2 r = getRes();
+  vec2 q = gl_FragCoord.xy/r.xy;
   vec2 p = -1. + 2. * q;
   vec2 pp = p;
-  p.x *= RESOLUTION.x/RESOLUTION.y;
+  p.x *= r.x/r.y;
 
   vec3 col = effect(p, pp);
-  
+
   fcol = vec4(col, 1.0);
 }
 )FS";
