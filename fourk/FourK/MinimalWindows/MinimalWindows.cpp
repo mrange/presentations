@@ -165,5 +165,11 @@ int __cdecl main() {
     assert(swapOk);
 
   }
+
+#ifdef USE_CRINKLER
+  ExitProcess(0);
+#else
+  return 0;
+#endif
 }
 
