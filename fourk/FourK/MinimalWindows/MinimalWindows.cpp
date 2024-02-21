@@ -41,8 +41,8 @@ extern "C" {
     ((PFNGLUNIFORM4FPROC)wglGetProcAddress(nm_glUniform4f))(
         0 // Uniform location
       , time
-      , static_cast<GLfloat>(xres)
-      , static_cast<GLfloat>(yres)
+      , XRES
+      , YRES
       , 0
       );
     glRects(-1, -1, 1, 1);
@@ -61,9 +61,7 @@ extern "C" {
 
     if (uMsg == WM_SIZE)
     {
-      xres = LOWORD(lParam);
-      yres = HIWORD(lParam);
-      glViewport(0, 0, xres, yres);
+      glViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
     }
 
     if (uMsg == WM_CHAR || uMsg == WM_KEYDOWN)

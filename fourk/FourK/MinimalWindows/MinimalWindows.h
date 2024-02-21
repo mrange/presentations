@@ -6,7 +6,9 @@
 
 #include "assert.h"
 
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 
 #include <windows.h>
 #include <winuser.h>
@@ -16,22 +18,22 @@
 #include <GL/gl.h>
 #include "glext.h"
 
+#define XRES 1920
+#define YRES 1080
+
 extern "C" {
   LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-  static int xres = 1920;
-  static int yres = 1080;
+  #pragma data_seg(".fltused")
+  int  _fltused = 0;
 
   #pragma data_seg(".windowRect")
   static RECT windowRect {
     0
   , 0
-  , xres
-  , yres
-  }     ;
-
-  #pragma data_seg(".fltused")
-  int  _fltused = 0;
+  , XRES
+  , YRES
+  };
 
   #pragma data_seg(".pixelFormatDescriptor")
   static PIXELFORMATDESCRIPTOR pixelFormatSpecification {
