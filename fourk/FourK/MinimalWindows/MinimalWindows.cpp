@@ -36,6 +36,7 @@ extern "C" {
 #endif
   }
 
+  #pragma code_seg(".draw")
   void draw(float time) {
     ((PFNGLUSEPROGRAMPROC)wglGetProcAddress(nm_glUseProgram))(fragmentShaderProgram);
     ((PFNGLUNIFORM4FPROC)wglGetProcAddress(nm_glUniform4f))(

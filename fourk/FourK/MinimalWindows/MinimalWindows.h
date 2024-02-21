@@ -18,7 +18,7 @@
 #include <GL/gl.h>
 #include "glext.h"
 
-//#define USE_MINI
+#define USE_MINI
 
 #define XRES 1920
 #define YRES 1080
@@ -90,14 +90,17 @@ extern "C" {
   #pragma data_seg(".glUniform4f")
   static const char nm_glUniform4f[] = "glUniform4f";
 
-  #pragma code_seg(".fragmentShaderProgram")
+  #pragma data_seg(".fragmentShaderProgram")
   GLint fragmentShaderProgram;
 
+  #pragma data_seg(".shader_fx")
+  GLchar const shader_fx[] = 
 #ifdef USE_MINI
-#include "shader.h"
+#define SHADER_MINIFIER_IMPL
+#include "shader.inl"
+;
 #else
-  #pragma code_seg(".shader_fx")
-  GLchar const shader_fx[] = R"FS(
+  R"FS(
 #version 430
 
 uniform vec4 state;
@@ -369,7 +372,7 @@ void main() {
 )FS";
 #endif
 
-  #pragma code_seg(".fragmentShaders")
+  #pragma data_seg(".fragmentShaders")
   char const * fragmentShaders[] = {shader_fx};
 
 }
