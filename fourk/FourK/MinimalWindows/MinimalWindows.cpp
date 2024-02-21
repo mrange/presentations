@@ -80,7 +80,11 @@ extern "C" {
 }
 
 #pragma code_seg(".main")
+#ifdef USE_CRINKLER
+void entrypoint() {
+#else
 int __cdecl main() {
+#endif
   auto hinstance = GetModuleHandle(0);
   assert(hinstance);
 
@@ -163,7 +167,5 @@ int __cdecl main() {
     assert(swapOk);
 
   }
-
-  return 0;
 }
 

@@ -16,9 +16,6 @@
 #include <GL/gl.h>
 #include "glext.h"
 
-#pragma comment(lib, "opengl32.lib")
-#pragma comment(lib, "winmm.lib")
-
 extern "C" {
   LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -32,6 +29,9 @@ extern "C" {
   , xres
   , yres
   }     ;
+
+  #pragma data_seg(".fltused")
+  int  _fltused = 0;
 
   #pragma data_seg(".pixelFormatDescriptor")
   static PIXELFORMATDESCRIPTOR pixelFormatSpecification {
