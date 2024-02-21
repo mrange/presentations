@@ -18,7 +18,7 @@
 #include <GL/gl.h>
 #include "glext.h"
 
-#define USE_MINI
+// #define USE_MINI
 
 #define XRES 1920
 #define YRES 1080
@@ -26,8 +26,13 @@
 extern "C" {
   LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+  #pragma data_seg(".xres")
+  static int xres = XRES;
+  #pragma data_seg(".yres")
+  static int yres = YRES;
+
   #pragma data_seg(".fltused")
-  int  _fltused = 0;
+  static int  _fltused = 0;
 
   #pragma data_seg(".windowRect")
   static RECT windowRect {
@@ -78,7 +83,7 @@ extern "C" {
       , 0                                   // hCursor
       , 0                                   // hbrBackground
       , 0                                   // lpszMenuName
-      , "DEMO"                             // lpszClassName
+      , "DEMO"                              // lpszClassName
   };
 
   #pragma data_seg(".glCreateShaderProgramv")
