@@ -151,7 +151,7 @@ vec3 effect(vec2 p, float tm, float n) {
   vec2 kp = p;
   float kl = dot(kp, kp);
   float nn = 2.0*floor(mix(3.0, 16.0, 0.5+0.5*sin(0.1*n)));
-  float kn = smoothKaleidoscope(kp, 0.1, nn);
+  smoothKaleidoscope(kp, 0.1, nn);
   kp += 0.5*sin(vec2(1.0, sqrt(0.5))*tm*0.21);
   col = kishimisu(col, kp, tm, n);
   col -= 0.75*vec3(0.0, 1.0, 2.0).zyx*dot(p, p);
