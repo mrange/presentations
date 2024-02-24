@@ -20,8 +20,8 @@ extern "C" {
   char debugLog[0xFFFF];
 #endif
 
-  #pragma code_seg(".init")
-  void init() {
+  #pragma code_seg(".init_demo")
+  void init_demo() {
 #ifdef _DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     ((PFNGLDEBUGMESSAGECALLBACKPROC)wglGetProcAddress("glDebugMessageCallback"))(debugCallback, 0);
@@ -36,8 +36,8 @@ extern "C" {
 #endif
   }
 
-  #pragma code_seg(".draw")
-  void draw(float time) {
+  #pragma code_seg(".draw_demo")
+  void draw_demo(float time) {
     ((PFNGLUSEPROGRAMPROC)wglGetProcAddress(nm_glUseProgram))(fragmentShaderProgram);
     ((PFNGLUNIFORM4FPROC)wglGetProcAddress(nm_glUniform4f))(
         0 // Uniform location
@@ -144,7 +144,7 @@ int __cdecl main() {
   auto makeOk = wglMakeCurrent(hdc, hglrc);
   assert(makeOk);
 
-  init();
+  init_demo();
 
   auto done = false;
 
@@ -163,7 +163,7 @@ int __cdecl main() {
     }
 
     auto now = timeGetTime();
-    draw((now - before)/1000.F);
+    draw_demo((now - before)/1000.F);
     auto swapOk = SwapBuffers(hdc);
     assert(swapOk);
 
