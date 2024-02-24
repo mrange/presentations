@@ -24,15 +24,15 @@
 #define YRES 1080
 
 extern "C" {
-  LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+  #pragma data_seg(".fltused")
+  int  _fltused = 0;
+
+  static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
   #pragma data_seg(".xres")
   static int xres = XRES;
   #pragma data_seg(".yres")
   static int yres = YRES;
-
-  #pragma data_seg(".fltused")
-  static int  _fltused = 0;
 
   #pragma data_seg(".windowRect")
   static RECT windowRect {
@@ -73,7 +73,7 @@ extern "C" {
   };
 
   #pragma data_seg(".windowClassSpecification")
-  WNDCLASSA windowClassSpecification {
+  static WNDCLASSA windowClassSpecification {
         CS_OWNDC | CS_HREDRAW | CS_VREDRAW  // style
       , &WndProc                            // lpfnWndProc
       , 0                                   // cbClsExtra
@@ -87,7 +87,7 @@ extern "C" {
   };
 
   #pragma data_seg(".glCreateShaderProgramv")
-  const char nm_glCreateShaderProgramv[] = "glCreateShaderProgramv";
+  static const char nm_glCreateShaderProgramv[] = "glCreateShaderProgramv";
 
   #pragma data_seg(".glUseProgram")
   static const char nm_glUseProgram[] = "glUseProgram";
@@ -96,10 +96,10 @@ extern "C" {
   static const char nm_glUniform4f[] = "glUniform4f";
 
   #pragma data_seg(".fragmentShaderProgram")
-  GLint fragmentShaderProgram;
+  static GLint fragmentShaderProgram;
 
   #pragma data_seg(".shader_fx")
-  GLchar const shader_fx[] = 
+  static GLchar const shader_fx[] =
 #ifdef USE_MINI
 #define SHADER_MINIFIER_IMPL
 #include "shader.inl"
@@ -378,7 +378,7 @@ void main() {
 #endif
 
   #pragma data_seg(".fragmentShaders")
-  char const * fragmentShaders[] = {shader_fx};
+  static char const * fragmentShaders[] = {shader_fx};
 
 }
 
