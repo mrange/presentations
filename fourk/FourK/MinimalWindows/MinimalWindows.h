@@ -20,8 +20,8 @@
 
 // #define USE_MINI
 
-#define XRES 1920
-#define YRES 1080
+#define XRES 1600
+#define YRES 900
 
 extern "C" {
   #pragma data_seg(".fltused")
