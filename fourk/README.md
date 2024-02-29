@@ -1,11 +1,13 @@
-# Demo
+# Demo preparation
 
-1. Create C++ project
-    12KiB release mode, not bad?
-2.  Need static linking
-    200KiB, less good
-3.  x64 too big! x86 better!
-    156KiB, less good
+1. Goto: https://www.youtube.com/watch?v=cDuUmCQJdVc
+1.1. So we don't have to watch ads during presenation
+2. Open Windows terminal in FourK folder
+3. Clear out residues from previous runs
+4. Start Visual Studio
+5. Start Visual Studio Code
+
+
 
 ## Commands
 
@@ -17,7 +19,7 @@
 ..\shader_minifier.exe .\shader.fx --format c-array -o shader.inl
 
 # Generate assembler code from sointu song file
-..\sointu-compile.exe -arch 386 -e "h,asm" music-sointu.yml
+..\sointu-compile.exe -arch 386 -e "h,asm" uglyverse.yml
 ```
 ## Externals
 
