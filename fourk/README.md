@@ -1,4 +1,6 @@
-# Demo preparation
+# Demo
+
+## Preparation
 
 1. Goto: https://www.youtube.com/watch?v=cDuUmCQJdVc
 1.1. So we don't have to watch ads during presenation
@@ -7,6 +9,15 @@
 4. Start Visual Studio
 5. Start Visual Studio Code
 
+## Script
+
+1. Show HelloWorld and the new to drop CRT
+2. Introduce a minimal windows app
+3. Compile with Crinkler
+4. Minify with Shader minifier
+5. Inline code
+6. Show sointu
+7. Show minesweeper
 
 
 ## Commands
